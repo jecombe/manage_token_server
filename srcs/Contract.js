@@ -8,7 +8,7 @@ dotenv.config();
 export class Contract {
     constructor() { }
 
-    getContractInfo = () => {
+    getContractInfo() {
         return getContract({
             address: process.env.CONTRACT,
             abi,
@@ -17,7 +17,7 @@ export class Contract {
         });
     };
 
-    getEventLogs = async (logSave, i, blockNumber) => {
+    async getEventLogs(logSave, i, blockNumber) {
         try {
             const batchSize = BigInt(3000);
 
