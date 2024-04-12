@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 
 import pkg from 'pg';
-import { loggerServer } from "../utils/logger";
+import { loggerServer } from "../utils/logger.js";
 const { Client } = pkg;
 
 dotenv.config();
@@ -32,6 +32,20 @@ export class DataBase {
         }
     }
 
+    async getData() {
+        const query = {
+            text: 'SELECT * FROM contract_logs',
+        };
+        try {
+            loggerServer.trace('Fetching data...');
+            const result = await this.client.query(query);
+            loggerServer.info('Data fetched successfully');
+            return result.rows;
+        } catch (error) {
+            loggerServer.error('Error fetching data:', error);
+            throw error;
+        }
+    }
 
 
     async insertData(blockNumber, eventName, fromAddress, toAddress, value) {

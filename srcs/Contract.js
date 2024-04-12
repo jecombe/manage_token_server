@@ -1,7 +1,8 @@
 
 import dotenv from "dotenv";
-import { ConnectPublicClient } from "../utils/client";
+import { ConnectPublicClient } from "../utils/client.js";
 import { getContract, parseAbi } from "viem";
+import { loggerServer } from "../utils/logger.js";
 
 dotenv.config();
 
@@ -52,5 +53,17 @@ export class Contract {
         } catch (error) {
             return error;
         }
+    }
+
+    startListener() {
+        loggerServer.info("Listening Events smart contract...");
+        this.unwatch = ConnectPublicClient().watchEvent({
+            onLogs: logs => loggerServer.trace(logs)
+          })
+    }
+
+
+    startListeningEvents() {
+        this.startListener();
     }
 }
