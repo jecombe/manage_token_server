@@ -1,9 +1,9 @@
 import { createPublicClient, http } from "viem";
-import { polygonMumbai } from "viem/chains";
+import { polygonMumbai, sepolia } from "viem/chains";
 
 export function ConnectPublicClient() {
     return createPublicClient({
-        chain: polygonMumbai,
+        chain: sepolia,
         transport: http(),
     });
 }
