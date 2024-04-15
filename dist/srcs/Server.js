@@ -37,6 +37,41 @@ class Server extends DataBase_js_1.DataBase {
             logger_js_1.loggerServer.info(`Server is listening on port ${port}`);
         });
     }
+    deleteDatabase() {
+        app.get("/api/delete-database", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield this.deleteAllData();
+                res.json("delete database ok");
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getAllData() {
+        app.get("/api/get-all", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                res.json(yield this.getData());
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getTransactions() {
+        app.get("/api/get-all-transac", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                res.json(yield this.getAllTx());
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getApi() {
+        this.deleteDatabase();
+        this.getAllData();
+    }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             try {

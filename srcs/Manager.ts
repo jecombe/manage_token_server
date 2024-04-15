@@ -18,7 +18,7 @@ export class Manager extends Server {
     async startServer(): Promise<void> {
         try {
             await this.start();
-          //  this.contract.startListeningEvents();
+           //this.contract.startListeningEvents();
         } catch (error) {
             loggerServer.fatal("StartServer: ", error);
         }

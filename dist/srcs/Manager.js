@@ -28,7 +28,7 @@ class Manager extends Server_1.Server {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.start();
-                //  this.contract.startListeningEvents();
+                //this.contract.startListeningEvents();
             }
             catch (error) {
                 logger_1.loggerServer.fatal("StartServer: ", error);

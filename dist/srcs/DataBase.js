@@ -81,12 +81,80 @@ class DataBase {
             try {
                 logger_js_1.loggerServer.trace('Fetching data...');
                 const result = yield this.pool.query(query);
-                logger_js_1.loggerServer.info('Data fetched successfully', result.rows);
+                logger_js_1.loggerServer.info('Data fetched successfully');
                 return result.rows;
             }
             catch (error) {
                 logger_js_1.loggerServer.error('Error fetching data:', error);
                 throw error;
+            }
+        });
+    }
+    getAllTx() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: "SELECT * FROM contract_logs WHERE eventName='Transfer'"
+            };
+            try {
+                logger_js_1.loggerServer.trace('get data');
+                const result = yield this.pool.query(query);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error inserting data:', error);
+                return error;
+            }
+        });
+    }
+    getTransfersFromAddress(fromAddress) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: "SELECT * FROM contract_logs WHERE eventName = 'Transfer' AND fromAddress = $1",
+                values: [fromAddress],
+            };
+            try {
+                logger_js_1.loggerServer.trace('Querying database for transfers from address:', fromAddress);
+                const result = yield this.pool.query(query);
+                logger_js_1.loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error querying data:', error);
+                throw error;
+            }
+        });
+    }
+    getAllowanceFromAddress(fromAddress) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: "SELECT * FROM contract_logs WHERE eventName = 'Allowance' AND fromAddress = $1",
+                values: [fromAddress],
+            };
+            try {
+                logger_js_1.loggerServer.trace('Querying database for allowances from address:', fromAddress);
+                const result = yield this.pool.query(query);
+                logger_js_1.loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error querying data:', error);
+                throw error;
+            }
+        });
+    }
+    getAllAproval() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: "SELECT * FROM contract_logs WHERE eventName='Approval'"
+            };
+            try {
+                logger_js_1.loggerServer.trace('get data');
+                const result = yield this.pool.query(query);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error inserting data:', error);
+                return error;
             }
         });
     }

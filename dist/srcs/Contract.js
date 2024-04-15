@@ -18,6 +18,7 @@ const viem_1 = require("viem");
 const logger_js_1 = require("../utils/logger.js");
 const Viem_js_1 = require("./Viem.js");
 const lodash_1 = __importDefault(require("lodash"));
+const utils_js_1 = require("../utils/utils.js");
 dotenv_1.default.config();
 class Contract extends Viem_js_1.Viem {
     constructor(address, abi, manager) {
@@ -30,40 +31,8 @@ class Contract extends Viem_js_1.Viem {
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        //this.startListeningEvents();
+        this.startListeningEvents();
     }
-    /*parseResult(logs) {
-        return logs.reduce((accumulator, currentLog) => {
-            const { args, eventName, blockNumber, transactionHash } = currentLog;
-
-            let parsedLog = {};
-
-            if (eventName === "Transfer") {
-                parsedLog = {
-                    eventName: "transfer",
-                    from: args.from,
-                    to: args.to,
-                    blockNumber: blockNumber.toString(),
-                    value: parseNumberToEth(args.value),
-                    transactionHash,
-                };
-                accumulator.push(parsedLog);
-            }
-
-            if (eventName === "Approval") {
-                parsedLog = {
-                    eventName: "approval",
-                    blockNumber: blockNumber.toString(),
-                    owner: args.owner,
-                    sender: args.sender,
-                    value: parseNumberToEth(args.value),
-                    transactionHash,
-                };
-                accumulator.push(parsedLog);
-            }
-            return accumulator;
-        }, []);
-    };*/
     parseNumberToEth(number) {
         const numberBigInt = BigInt(number); // Convertir la chaîne de caractères en bigint
         return Number((0, viem_1.formatEther)(numberBigInt)).toFixed(2);
@@ -92,8 +61,10 @@ class Contract extends Viem_js_1.Viem {
         }, []);
     }
     sendData(parsed) {
-        parsed.map((el) => {
-            this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value);
+        return __awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(parsed.map((el) => __awaiter(this, void 0, void 0, function* () {
+                yield this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value);
+            })));
         });
     }
     getEventLogs() {
@@ -115,15 +86,15 @@ class Contract extends Viem_js_1.Viem {
                 });
                 const parsed = this.parseResult(batchLogs);
                 if (!lodash_1.default.isEmpty(parsed)) {
-                    this.sendData(parsed);
+                    console.log(parsed);
+                    // await this.sendData(parsed);
                 }
                 this.index++;
-                if (this.index > 0) {
-                    yield new Promise((resolve) => setTimeout(resolve, 2000));
-                }
+                if (this.index > 0)
+                    yield (0, utils_js_1.waiting)(2000);
                 if (this.save.length > saveLength)
-                    return 0; //return { logSave, i, blockNumber };
-                return 0;
+                    return;
+                return;
             }
             catch (error) {
                 console.log(error);
@@ -155,15 +126,20 @@ class Contract extends Viem_js_1.Viem {
         return __awaiter(this, void 0, void 0, function* () {
             const elapsedTime = Date.now() - batchStartTime;
             const waitTime = Math.max(0, timePerRequest - elapsedTime);
-            return new Promise((resolve) => setTimeout(resolve, waitTime));
+            return (0, utils_js_1.waiting)(waitTime);
         });
     }
     ;
     processLogsBatch() {
         return __awaiter(this, void 0, void 0, function* () {
             const batchStartTime = Date.now();
-            yield this.getEventLogs();
-            yield this.waitingRate(batchStartTime, this.timePerRequest);
+            try {
+                yield this.getEventLogs();
+                yield this.waitingRate(batchStartTime, this.timePerRequest);
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error(error);
+            }
         });
     }
     ;
@@ -176,8 +152,8 @@ class Contract extends Viem_js_1.Viem {
     startListeningEvents() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                yield this.getLogsContract();
-                //  this.startListener();
+                //await this.getLogsContract();
+                this.startListener();
             }
             catch (error) {
                 console.log(error);

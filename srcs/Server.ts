@@ -1,7 +1,7 @@
 
 import dotenv from "dotenv";
 import { loggerServer } from "../utils/logger.js";
-import {  sepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 
 import { DataBase } from "./DataBase.js";
 
@@ -33,15 +33,53 @@ export class Server extends DataBase {
         });
     }
 
+    deleteDatabase() {
+        app.get("/api/delete-database", async (req, res) => {
+            try {
+                await this.deleteAllData();
+                res.json("delete database ok");
+            } catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        });
+    }
+
+
+    getAllData() {
+        app.get("/api/get-all", async (req, res) => {
+            try {
+                res.json(await this.getData());
+            } catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        });
+    }
+
+    getTransactions() {
+        app.get("/api/get-all-transac", async (req, res) => {
+            try {
+                res.json(await this.getAllTx());
+            } catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        });
+    }
+
+    getApi() {
+        this.deleteDatabase()
+        this.getAllData();
+    }
+
+
     async start() {
         try {
             this.startApp();
             await this.startBdd();
-        
+
             loggerServer.trace("Connected to PostgreSQL database");
         } catch (error) {
             loggerServer.error(error)
-            
+
         }
     }
 }
