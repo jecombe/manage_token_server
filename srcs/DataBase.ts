@@ -1,25 +1,36 @@
 
 import dotenv from "dotenv";
 
-import pkg from 'pg';
+import pkg, { Pool } from 'pg';
 import { loggerServer } from "../utils/logger.js";
 const { Client } = pkg;
 
 dotenv.config();
 
 export class DataBase {
-    constructor() {
 
-        this.client = new Client({
+    public pool: Pool;
+
+    constructor() {
+        this.pool = new Pool({
             user: process.env.USR,
             password: process.env.PASSWORD,
             host: process.env.HOST,
            // port: process.env.PORT,
             database: process.env.DB
-        })
+          });
+
+
+       /* this.client = new Client({
+            user: process.env.USR,
+            password: process.env.PASSWORD,
+            host: process.env.HOST,
+           // port: process.env.PORT,
+            database: process.env.DB
+        })*/
     }
 
-    async deleteAllData() {
+  /*  async deleteAllData() {
         const query = {
             text: 'DELETE FROM contract_logs',
         };
@@ -48,7 +59,7 @@ export class DataBase {
     }
 
 
-    async insertData(blockNumber, eventName, fromAddress, toAddress, value) {
+    async insertData(blockNumber: number, eventName: string, fromAddress: string, toAddress: string, value: number) {
         const query = {
             text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
             values: [blockNumber, eventName, fromAddress, toAddress, value],
@@ -62,8 +73,8 @@ export class DataBase {
             return error;
         }
     }
-    
-    async start() {
-        return this.client.connect();
+    */
+    async startBdd() {
+        return this.pool.connect();
     }
 }

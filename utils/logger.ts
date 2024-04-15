@@ -1,6 +1,6 @@
-import log4js from "log4js";
+import log4js, { Configuration, Logger } from "log4js";
 
-log4js.configure({
+const logConfig: Configuration = {
   appenders: {
     server: {
       type: "console",
@@ -10,9 +10,9 @@ log4js.configure({
   },
   categories: {
     default: { appenders: ["server"], level: "all" },
-  },
-  debug: true,
-  pm2: true,
-});
+  }
+};
 
-export const loggerServer = log4js.getLogger("server");
+log4js.configure(logConfig);
+
+export const loggerServer: Logger = log4js.getLogger("server");
