@@ -8,11 +8,10 @@ dotenv.config();
 
 
 export class Manager extends Server {
-    public contract: Contract;
 
     constructor() {
-        super();
-        this.contract = new Contract(`${process.env.CONTRACT}`, abi, this);
+        super()
+        this.setManager(this);
     }
 
     async startServer(): Promise<void> {

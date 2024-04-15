@@ -15,14 +15,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manager = void 0;
 const logger_1 = require("../utils/logger");
 const dotenv_1 = __importDefault(require("dotenv"));
-const Contract_1 = require("./Contract");
-const abi_1 = __importDefault(require("../utils/abi"));
 const Server_1 = require("./Server");
 dotenv_1.default.config();
 class Manager extends Server_1.Server {
     constructor() {
         super();
-        this.contract = new Contract_1.Contract(`${process.env.CONTRACT}`, abi_1.default, this);
+        this.setManager(this);
     }
     startServer() {
         return __awaiter(this, void 0, void 0, function* () {

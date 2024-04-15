@@ -27,14 +27,15 @@ class Contract extends Viem_js_1.Viem {
         this.unwatch = null;
         this.manager = manager;
         this.save = [];
+        this.test = 0;
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        this.startListeningEvents();
+        //  this.startListeningEvents();
     }
     parseNumberToEth(number) {
-        const numberBigInt = BigInt(number); // Convertir la chaîne de caractères en bigint
+        const numberBigInt = BigInt(number);
         return Number((0, viem_1.formatEther)(numberBigInt)).toFixed(2);
     }
     ;
@@ -70,6 +71,7 @@ class Contract extends Viem_js_1.Viem {
     getEventLogs() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                console.log(this.test);
                 const batchSize = BigInt(3000);
                 const saveLength = this.save.length;
                 let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
@@ -152,8 +154,8 @@ class Contract extends Viem_js_1.Viem {
     startListeningEvents() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                //await this.getLogsContract();
-                this.startListener();
+                yield this.getLogsContract();
+                // this.startListener();
             }
             catch (error) {
                 console.log(error);

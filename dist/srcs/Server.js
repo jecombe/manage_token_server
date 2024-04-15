@@ -18,12 +18,19 @@ const logger_js_1 = require("../utils/logger.js");
 const DataBase_js_1 = require("./DataBase.js");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const Contract_js_1 = require("./Contract.js");
+const abi_js_1 = __importDefault(require("../utils/abi.js"));
+const lodash_1 = __importDefault(require("lodash"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = 8000;
 class Server extends DataBase_js_1.DataBase {
     constructor() {
         super();
+        this.contract = null;
+    }
+    setManager(manager) {
+        this.contract = new Contract_js_1.Contract(`${process.env.CONTRACT}`, abi_js_1.default, manager);
     }
     startApp() {
         const corsOptions = {
@@ -72,11 +79,23 @@ class Server extends DataBase_js_1.DataBase {
         this.deleteDatabase();
         this.getAllData();
     }
+    parseStartingDb(array) {
+        const obj = lodash_1.default.last(array);
+        console.log("++++++++++++++++++++++++++++++>", obj);
+        if (this.contract) {
+            this.contract.test = 14;
+        }
+    }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
                 this.startApp();
                 yield this.startBdd();
+                const r = yield this.getData();
+                this.parseStartingDb(r);
+                (_a = this.contract) === null || _a === void 0 ? void 0 : _a.startListeningEvents();
+                console.log(r);
                 logger_js_1.loggerServer.trace("Connected to PostgreSQL database");
             }
             catch (error) {

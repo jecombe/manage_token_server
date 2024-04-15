@@ -4,8 +4,23 @@ import dotenv from "dotenv";
 import pkg, { Pool } from 'pg';
 import { loggerServer } from "../utils/logger.js";
 const { Client } = pkg;
+import _ from "lodash"
 
 dotenv.config();
+
+
+interface LogEntry {
+    args: {
+        from?: string;
+        to?: string;
+        value?: bigint; 
+        owner?: string;
+        sender?: string;
+    };
+    eventName: string;
+    blockNumber: bigint;
+    transactionHash: string;
+}
 
 export class DataBase {
 
@@ -120,6 +135,8 @@ export class DataBase {
     }
 
 
+
+   
 
     async insertData(blockNumber: number, eventName: string, fromAddress: string, toAddress: string, value: number) {
         const query = {

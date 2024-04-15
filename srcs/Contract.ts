@@ -40,9 +40,10 @@ export class Contract extends Viem {
     manager: Manager;
     save: ParsedLog[] = [];
     index: number;
-    blockNumber: bigint
+    public blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
+    test: number
 
 
     constructor(address: string, abi: any[], manager: Manager) {
@@ -50,16 +51,17 @@ export class Contract extends Viem {
         this.unwatch = null;
         this.manager = manager;
         this.save = [];
+        this.test = 0;
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        this.startListeningEvents();
+      //  this.startListeningEvents();
 
     }
 
     parseNumberToEth(number: string) {
-        const numberBigInt = BigInt(number); // Convertir la chaîne de caractères en bigint
+        const numberBigInt = BigInt(number);
         return Number(formatEther(numberBigInt)).toFixed(2);
     };
 
@@ -99,6 +101,9 @@ export class Contract extends Viem {
 
     async getEventLogs() {
         try {
+
+            console.log(this.test);
+            
             const batchSize = BigInt(3000);
             const saveLength = this.save.length;
 
@@ -183,8 +188,8 @@ export class Contract extends Viem {
 
     async startListeningEvents() {
         try {
-            //await this.getLogsContract();
-            this.startListener();
+            await this.getLogsContract();
+           // this.startListener();
         } catch (error) {
             console.log(error);
         }

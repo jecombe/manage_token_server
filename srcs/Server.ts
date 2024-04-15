@@ -7,6 +7,10 @@ import { DataBase } from "./DataBase.js";
 
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { Manager } from "./Manager.js";
+import { Contract } from "./Contract.js";
+import abi from "../utils/abi.js";
+import _ from "lodash"
 
 dotenv.config();
 
@@ -14,10 +18,26 @@ const app = express();
 const port = 8000;
 
 
+interface Res {
+    blocknumber: string;
+    eventname: string;
+    fromaddress: string;
+    toaddress: string;
+    value: string;
+}
+
 export class Server extends DataBase {
+
+    public contract: Contract | null;
+
 
     constructor() {
         super();
+        this.contract = null;
+    }
+
+    setManager(manager: Manager) {
+        this.contract = new Contract(`${process.env.CONTRACT}`, abi, manager);
     }
 
     startApp(): void {
@@ -43,6 +63,7 @@ export class Server extends DataBase {
             }
         });
     }
+
 
 
     getAllData() {
@@ -71,10 +92,27 @@ export class Server extends DataBase {
     }
 
 
+
+    parseStartingDb(array: Res[]) {
+        const obj = _.last(array);
+        console.log("++++++++++++++++++++++++++++++>", obj)
+        if (this.contract) {
+            this.contract.test = 14;
+        }
+        
+    }
+
+
+
+
     async start() {
         try {
             this.startApp();
             await this.startBdd();
+            const r = await this.getData();
+            this.parseStartingDb(r)
+            this.contract?.startListeningEvents();
+            console.log(r);
 
             loggerServer.trace("Connected to PostgreSQL database");
         } catch (error) {
