@@ -106,5 +106,8 @@ class DataBase {
             return this.pool.connect();
         });
     }
+    addLogs() {
+        console.log("Add Logs");
+    }
 }
 exports.DataBase = DataBase;

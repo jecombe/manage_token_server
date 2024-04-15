@@ -77,4 +77,9 @@ export class DataBase {
     async startBdd() {
         return this.pool.connect();
     }
+
+    addLogs() {
+        console.log("Add Logs");
+        
+    }
 }

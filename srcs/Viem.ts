@@ -29,6 +29,11 @@ export class Viem {
         });
     }
 
+    async getActualBlock(): Promise<bigint> {
+        return this.cliPublic.getBlockNumber();
+
+    }
+
 
     getContractApp(): PublicClient{
        return this.ConnectPublicClient();

@@ -22,7 +22,7 @@ dotenv_1.default.config();
 class Manager extends Server_1.Server {
     constructor() {
         super();
-        this.contract = new Contract_1.Contract(`${process.env.CONTRACT}`, abi_1.default);
+        this.contract = new Contract_1.Contract(`${process.env.CONTRACT}`, abi_1.default, this);
     }
     /*async insertNewValue(): Promise<void> {
         try {
@@ -36,7 +36,7 @@ class Manager extends Server_1.Server {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.start();
-                this.contract.startListeningEvents();
+                //  this.contract.startListeningEvents();
             }
             catch (error) {
                 logger_1.loggerServer.fatal("StartServer: ", error);
