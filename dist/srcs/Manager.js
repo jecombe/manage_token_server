@@ -24,14 +24,6 @@ class Manager extends Server_1.Server {
         super();
         this.contract = new Contract_1.Contract(`${process.env.CONTRACT}`, abi_1.default, this);
     }
-    /*async insertNewValue(): Promise<void> {
-        try {
-            await this.db.insertData(1, "event", "OXXXXXXXXXXXX", "OYYYYYYYYYYYYYYYYY", 12);
-            loggerServer.info("Data insert succeed");
-        } catch (error) {
-            loggerServer.error("Error inserting data:", error);
-        }
-    }*/
     startServer() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
@@ -42,6 +34,10 @@ class Manager extends Server_1.Server {
                 logger_1.loggerServer.fatal("StartServer: ", error);
             }
         });
+    }
+    addData() {
+        console.log("MANAGER");
+        this.addLogs();
     }
     test() {
         return __awaiter(this, void 0, void 0, function* () {

@@ -17,6 +17,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const viem_1 = require("viem");
 const logger_js_1 = require("../utils/logger.js");
 const Viem_js_1 = require("./Viem.js");
+const lodash_1 = __importDefault(require("lodash"));
 dotenv_1.default.config();
 class Contract extends Viem_js_1.Viem {
     constructor(address, abi, manager) {
@@ -29,7 +30,7 @@ class Contract extends Viem_js_1.Viem {
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        this.startListeningEvents();
+        //this.startListeningEvents();
     }
     /*parseResult(logs) {
         return logs.reduce((accumulator, currentLog) => {
@@ -73,22 +74,27 @@ class Contract extends Viem_js_1.Viem {
             let parsedLog = {
                 eventName: currentLog.eventName,
                 blockNumber: currentLog.blockNumber.toString(),
-                value: 0, // Valeur par défaut, vous pouvez l'initialiser avec une autre valeur si nécessaire
+                value: 0,
                 transactionHash: currentLog.transactionHash,
             };
             if (currentLog.eventName === "Transfer") {
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
-                parsedLog.value = 0; //Number(this.parseNumberToEth(currentLog.args.value));
+                parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
             if (currentLog.eventName === "Approval") {
                 parsedLog.owner = currentLog.args.owner;
                 parsedLog.sender = currentLog.args.sender;
-                parsedLog.value = 0; //Number(this.parseNumberToEth(currentLog.args.value));
+                parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
             accumulator.push(parsedLog);
             return accumulator;
         }, []);
+    }
+    sendData(parsed) {
+        parsed.map((el) => {
+            this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value);
+        });
     }
     getEventLogs() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -102,13 +108,15 @@ class Contract extends Viem_js_1.Viem {
                     events: (0, viem_1.parseAbi)([
                         "event Approval(address indexed owner, address indexed sender, uint256 value)",
                         "event Transfer(address indexed from, address indexed to, uint256 value)",
-                        "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+                        // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
                     ]),
                     fromBlock: fromBlock,
                     toBlock: toBlock,
                 });
-                this.save = this.save.concat(this.parseResult(batchLogs));
-                // console.log(`Logs saved for request ${this.index + 1}:`, this.save.length);
+                const parsed = this.parseResult(batchLogs);
+                if (!lodash_1.default.isEmpty(parsed)) {
+                    this.sendData(parsed);
+                }
                 this.index++;
                 if (this.index > 0) {
                     yield new Promise((resolve) => setTimeout(resolve, 2000));
@@ -166,8 +174,15 @@ class Contract extends Viem_js_1.Viem {
         });
     }
     startListeningEvents() {
-        this.getLogsContract();
-        //  this.startListener();
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield this.getLogsContract();
+                //  this.startListener();
+            }
+            catch (error) {
+                console.log(error);
+            }
+        });
     }
 }
 exports.Contract = Contract;

@@ -30,13 +30,13 @@ export class DataBase {
         })*/
     }
 
-  /*  async deleteAllData() {
+    async deleteAllData() {
         const query = {
             text: 'DELETE FROM contract_logs',
         };
         try {
             loggerServer.trace('All data are delete waiting...');
-            await this.client.query(query);
+            await this.pool.query(query);
             loggerServer.info('All data deleted successfully');
         } catch (error) {
             loggerServer.error('Error deleting data:', error);
@@ -49,8 +49,8 @@ export class DataBase {
         };
         try {
             loggerServer.trace('Fetching data...');
-            const result = await this.client.query(query);
-            loggerServer.info('Data fetched successfully');
+            const result = await this.pool.query(query);
+            loggerServer.info('Data fetched successfully', result.rows);
             return result.rows;
         } catch (error) {
             loggerServer.error('Error fetching data:', error);
@@ -66,20 +66,21 @@ export class DataBase {
         };
         try {
             loggerServer.trace('Data insert wating...');
-            await this.client.query(query);
+            await this.pool.query(query);
             loggerServer.info('Data inserted successfully');
         } catch (error) {
             loggerServer.error('Error inserting data:', error);
             return error;
         }
     }
-    */
+    
     async startBdd() {
         return this.pool.connect();
     }
 
     addLogs() {
-        console.log("Add Logs");
-        
+        console.log("Add Logs DATABASE");   
+        //this.insertData(0, "eventName", "fromAddress", "toAddress", 1)
+        this.getData()
     }
 }

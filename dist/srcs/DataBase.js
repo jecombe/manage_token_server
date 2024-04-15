@@ -38,6 +38,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataBase = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 const pg_1 = __importStar(require("pg"));
+const logger_js_1 = require("../utils/logger.js");
 const { Client } = pg_1.default;
 dotenv_1.default.config();
 class DataBase {
@@ -57,57 +58,64 @@ class DataBase {
              database: process.env.DB
          })*/
     }
-    /*  async deleteAllData() {
-          const query = {
-              text: 'DELETE FROM contract_logs',
-          };
-          try {
-              loggerServer.trace('All data are delete waiting...');
-              await this.client.query(query);
-              loggerServer.info('All data deleted successfully');
-          } catch (error) {
-              loggerServer.error('Error deleting data:', error);
-          }
-      }
-  
-      async getData() {
-          const query = {
-              text: 'SELECT * FROM contract_logs',
-          };
-          try {
-              loggerServer.trace('Fetching data...');
-              const result = await this.client.query(query);
-              loggerServer.info('Data fetched successfully');
-              return result.rows;
-          } catch (error) {
-              loggerServer.error('Error fetching data:', error);
-              throw error;
-          }
-      }
-  
-  
-      async insertData(blockNumber: number, eventName: string, fromAddress: string, toAddress: string, value: number) {
-          const query = {
-              text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
-              values: [blockNumber, eventName, fromAddress, toAddress, value],
-          };
-          try {
-              loggerServer.trace('Data insert wating...');
-              await this.client.query(query);
-              loggerServer.info('Data inserted successfully');
-          } catch (error) {
-              loggerServer.error('Error inserting data:', error);
-              return error;
-          }
-      }
-      */
+    deleteAllData() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: 'DELETE FROM contract_logs',
+            };
+            try {
+                logger_js_1.loggerServer.trace('All data are delete waiting...');
+                yield this.pool.query(query);
+                logger_js_1.loggerServer.info('All data deleted successfully');
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error deleting data:', error);
+            }
+        });
+    }
+    getData() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: 'SELECT * FROM contract_logs',
+            };
+            try {
+                logger_js_1.loggerServer.trace('Fetching data...');
+                const result = yield this.pool.query(query);
+                logger_js_1.loggerServer.info('Data fetched successfully', result.rows);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error fetching data:', error);
+                throw error;
+            }
+        });
+    }
+    insertData(blockNumber, eventName, fromAddress, toAddress, value) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
+                values: [blockNumber, eventName, fromAddress, toAddress, value],
+            };
+            try {
+                logger_js_1.loggerServer.trace('Data insert wating...');
+                yield this.pool.query(query);
+                logger_js_1.loggerServer.info('Data inserted successfully');
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error inserting data:', error);
+                return error;
+            }
+        });
+    }
     startBdd() {
         return __awaiter(this, void 0, void 0, function* () {
             return this.pool.connect();
         });
     }
     addLogs() {
-        console.log("Add Logs");
+        console.log("Add Logs DATABASE");
+        //this.insertData(0, "eventName", "fromAddress", "toAddress", 1)
+        this.getData();
     }
 }
 exports.DataBase = DataBase;

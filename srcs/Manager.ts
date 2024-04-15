@@ -15,17 +15,6 @@ export class Manager extends Server {
         this.contract = new Contract(`${process.env.CONTRACT}`, abi, this);
     }
 
-  
-
-    /*async insertNewValue(): Promise<void> {
-        try {
-            await this.db.insertData(1, "event", "OXXXXXXXXXXXX", "OYYYYYYYYYYYYYYYYY", 12);
-            loggerServer.info("Data insert succeed");
-        } catch (error) {
-            loggerServer.error("Error inserting data:", error);
-        }
-    }*/
-
     async startServer(): Promise<void> {
         try {
             await this.start();
@@ -34,6 +23,13 @@ export class Manager extends Server {
             loggerServer.fatal("StartServer: ", error);
         }
     }
+
+    addData() {
+        console.log("MANAGER");
+        
+        this.addLogs()
+    }
+    
 
     async test(): Promise<void> {
         // Votre logique de test

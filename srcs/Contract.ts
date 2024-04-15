@@ -1,20 +1,12 @@
 
 import dotenv from "dotenv";
-import { ConnectPublicClient, getContractApp } from "../utils/clientViem.js";
-import { Chain, Client, PublicClient, Transport, formatEther, getContract, parseAbi } from "viem";
+import {  formatEther, parseAbi } from "viem";
 import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
+import _ from "lodash";
 
 dotenv.config();
-
-
-interface CurrentLog {
-    args: any; // Remplacez 'any' par le type approprié des arguments
-    eventName: string;
-    blockNumber: bigint;
-    transactionHash: string;
-}
 
 interface LogEntry {
     args: {
@@ -61,7 +53,7 @@ export class Contract extends Viem {
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        this.startListeningEvents();
+        //this.startListeningEvents();
 
     }
 
@@ -103,33 +95,40 @@ export class Contract extends Viem {
         return Number(formatEther(numberBigInt)).toFixed(2);
     };
 
-      parseResult(logs: LogEntry[]): ParsedLog[] {
+    parseResult(logs: LogEntry[]): ParsedLog[] {
         return logs.reduce((accumulator: ParsedLog[], currentLog: LogEntry) => {
+
             let parsedLog: ParsedLog = {
                 eventName: currentLog.eventName,
                 blockNumber: currentLog.blockNumber.toString(),
-                value: 0, // Valeur par défaut, vous pouvez l'initialiser avec une autre valeur si nécessaire
+                value: 0,
                 transactionHash: currentLog.transactionHash,
             };
-          
+            
+
             if (currentLog.eventName === "Transfer") {
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
-                parsedLog.value = 0//Number(this.parseNumberToEth(currentLog.args.value));
+                parsedLog.value =  Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
-          
+
             if (currentLog.eventName === "Approval") {
                 parsedLog.owner = currentLog.args.owner;
                 parsedLog.sender = currentLog.args.sender;
-                parsedLog.value = 0//Number(this.parseNumberToEth(currentLog.args.value));
+                parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
-          
+
             accumulator.push(parsedLog);
             return accumulator;
         }, []);
     }
 
-      
+    sendData(parsed: any) {
+        parsed.map((el: any) => {
+            this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value)
+        })
+    }
+ 
     async getEventLogs() {
         try {
             const batchSize = BigInt(3000);
@@ -144,15 +143,16 @@ export class Contract extends Viem {
                 events: parseAbi([
                     "event Approval(address indexed owner, address indexed sender, uint256 value)",
                     "event Transfer(address indexed from, address indexed to, uint256 value)",
-                    "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+                   // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
                 ]),
                 fromBlock: fromBlock,
                 toBlock: toBlock,
             });
-            
-            this.save = this.save.concat(this.parseResult(batchLogs));
 
-           // console.log(`Logs saved for request ${this.index + 1}:`, this.save.length);
+            const parsed = this.parseResult(batchLogs);
+            if (!_.isEmpty(parsed)) {
+                this.sendData(parsed);
+            }            
             this.index++;
 
             if (this.index > 0) {
@@ -165,7 +165,7 @@ export class Contract extends Viem {
 
         } catch (error) {
             console.log(error);
-            
+
             return error;
         }
     }
@@ -198,7 +198,7 @@ export class Contract extends Viem {
 
     async processLogsBatch() {
         const batchStartTime = Date.now();
-        
+
         await this.getEventLogs();
         await this.waitingRate(batchStartTime, this.timePerRequest);
     };
@@ -212,8 +212,14 @@ export class Contract extends Viem {
     }
 
 
-    startListeningEvents() {
-        this.getLogsContract();
-       //  this.startListener();
+
+    async startListeningEvents() {
+        try {
+            await this.getLogsContract();
+            //  this.startListener();
+        } catch (error) {
+            console.log(error);
+        }
+
     }
 }

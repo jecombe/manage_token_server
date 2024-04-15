@@ -1,6 +1,5 @@
 
 import dotenv from "dotenv";
-import { ConnectPublicClient } from "../utils/clientViem.js";
 import { Chain, PublicClient, createPublicClient, http } from "viem";
 import {  sepolia } from "viem/chains";
 dotenv.config();

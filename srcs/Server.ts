@@ -37,12 +37,12 @@ export class Server extends DataBase {
         try {
             this.startApp();
             await this.startBdd();
+        
             loggerServer.trace("Connected to PostgreSQL database");
         } catch (error) {
             loggerServer.error(error)
             
         }
-
     }
 }
 
