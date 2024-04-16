@@ -73,6 +73,24 @@ class DataBase {
             }
         });
     }
+    getAllDataFromAddr(fromAddress) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const query = {
+                text: "SELECT * FROM contract_logs WHERE fromAddress = $1",
+                values: [fromAddress],
+            };
+            try {
+                logger_js_1.loggerServer.trace('Querying database for all data from address:', fromAddress);
+                const result = yield this.pool.query(query);
+                logger_js_1.loggerServer.info(`All transfer all data from address ${fromAddress} retrieved successfully`);
+                return result.rows;
+            }
+            catch (error) {
+                logger_js_1.loggerServer.error('Error querying data:', error);
+                throw error;
+            }
+        });
+    }
     getData() {
         return __awaiter(this, void 0, void 0, function* () {
             const query = {

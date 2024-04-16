@@ -55,7 +55,7 @@ export class Server extends DataBase {
     }
 
     deleteDatabase() {
-        app.get("/api/delete-database", async (req, res) => {
+        app.delete("/api/delete-database", async (req, res) => {
             try {
                 loggerServer.info(`delete-database - Receive request from: ${req.ip}`)
 
@@ -81,12 +81,12 @@ export class Server extends DataBase {
         });
     }
 
-    getAllDataFromAddr() {
+    getAllLogsFromAddr() {
         app.get("/api/get-all-addr", async (req, res) => {
             try {
-                loggerServer.info(`get-all - Receive request from: ${req.ip}`)
+                loggerServer.info(`get-all-addr - Receive request from: ${req.ip}`)
 
-                res.json(await this.getData());
+               res.json(await this.getAllDataFromAddr(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
             }
@@ -108,7 +108,7 @@ export class Server extends DataBase {
         app.get("/api/get-all-transac-addr", async (req, res) => {
             try {
                 loggerServer.info(`get-all-transac-addr - Receive request from: ${req.ip}`)
-                res.json(await this.getTransfersFromAddress(`${req.query.addr}`));
+                res.json(await this.getTransfersFromAddress(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
             }
@@ -130,8 +130,8 @@ export class Server extends DataBase {
     getAllowancesFromAddr() {
         app.get("/api/get-all-allowances-addr", async (req, res) => {
             try {
-                loggerServer.info(`get-all-allowances-addr - Receive request from: ${req.ip}`)
-                res.json(await this.getAllowanceFromAddress(`${req.query.addr}`));
+                loggerServer.info(`get-all-allowances-addr - Receive request from`, req.ip)
+                res.json(await this.getAllowanceFromAddress(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
             }
@@ -143,6 +143,11 @@ export class Server extends DataBase {
         loggerServer.info("Starting api")
         this.deleteDatabase()
         this.getAllData();
+        this.getAllLogsFromAddr()
+        this.getTransactions()
+        this.getTransactionsFromAddr()
+        this.getAllowances()
+        this.getAllowancesFromAddr()
     }
 
 
@@ -169,8 +174,8 @@ export class Server extends DataBase {
     async start() {
         try {
             this.startApp();
-            this.getApi();
             await this.startBdd();
+            this.getApi();
             const r = await this.getData();
             this.parseStartingDb(r)
             // this.contract?.startListeningEvents();

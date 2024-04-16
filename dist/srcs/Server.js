@@ -67,11 +67,11 @@ class Server extends DataBase_js_1.DataBase {
             }
         }));
     }
-    getAllDataFromAddr() {
+    getAllLogsFromAddr() {
         app.get("/api/get-all-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all - Receive request from: ${req.ip}`);
-                res.json(yield this.getData());
+                logger_js_1.loggerServer.info(`get-all-addr - Receive request from: ${req.ip}`);
+                res.json(yield this.getAllDataFromAddr(`${req.query.userAddress}`));
             }
             catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -93,7 +93,7 @@ class Server extends DataBase_js_1.DataBase {
         app.get("/api/get-all-transac-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 logger_js_1.loggerServer.info(`get-all-transac-addr - Receive request from: ${req.ip}`);
-                res.json(yield this.getTransfersFromAddress(`${req.query.addr}`));
+                res.json(yield this.getTransfersFromAddress(`${req.query.userAddress}`));
             }
             catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -114,8 +114,8 @@ class Server extends DataBase_js_1.DataBase {
     getAllowancesFromAddr() {
         app.get("/api/get-all-allowances-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-allowances-addr - Receive request from: ${req.ip}`);
-                res.json(yield this.getAllowanceFromAddress(`${req.query.addr}`));
+                logger_js_1.loggerServer.info(`get-all-allowances-addr - Receive request from`, req.ip);
+                res.json(yield this.getAllowanceFromAddress(`${req.query.userAddress}`));
             }
             catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -126,6 +126,11 @@ class Server extends DataBase_js_1.DataBase {
         logger_js_1.loggerServer.info("Starting api");
         this.deleteDatabase();
         this.getAllData();
+        this.getAllLogsFromAddr();
+        this.getTransactions();
+        this.getTransactionsFromAddr();
+        this.getAllowances();
+        this.getAllowancesFromAddr();
     }
     parseStartingDb(array) {
         const obj = lodash_1.default.last(array);
@@ -136,12 +141,18 @@ class Server extends DataBase_js_1.DataBase {
             // Gérer le cas où obj?.blocknumber est undefined
         }
     }
+    startFetchingLogs() {
+        var _a;
+        (_a = this.contract) === null || _a === void 0 ? void 0 : _a.startListener((logs) => {
+            logger_js_1.loggerServer.trace("Receive logs: ", logs);
+        });
+    }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 this.startApp();
-                this.getApi();
                 yield this.startBdd();
+                this.getApi();
                 const r = yield this.getData();
                 this.parseStartingDb(r);
                 // this.contract?.startListeningEvents();

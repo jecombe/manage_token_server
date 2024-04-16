@@ -19,6 +19,7 @@ const logger_js_1 = require("../utils/logger.js");
 const Viem_js_1 = require("./Viem.js");
 const lodash_1 = __importDefault(require("lodash"));
 const utils_js_1 = require("../utils/utils.js");
+const abi_js_1 = __importDefault(require("../utils/abi.js"));
 dotenv_1.default.config();
 class Contract extends Viem_js_1.Viem {
     constructor(address, abi, manager) {
@@ -140,7 +141,6 @@ class Contract extends Viem_js_1.Viem {
                         yield (0, utils_js_1.waiting)(2000);
                     if (this.save.length > saveLength)
                         return;
-                    // Mettre à jour le bloc courant pour la prochaine itération
                     currentBlock -= batchSize;
                     console.log("FINISH", currentBlock, this.stopAt);
                 }
@@ -244,17 +244,19 @@ class Contract extends Viem_js_1.Viem {
         });
     }
     ;
-    startListener() {
+    startListener(callback) {
         logger_js_1.loggerServer.info("Listening Events smart contract...");
-        this.unwatch = this.cliPublic.watchEvent({
-            onLogs: (logs) => logger_js_1.loggerServer.trace(logs)
+        return this.cliPublic.watchContractEvent({
+            address: "0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac",
+            abi: abi_js_1.default,
+            onLogs: callback,
         });
     }
     startListeningEvents() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                yield this.getLogsContract();
-                // this.startListener();
+                //this.startListener();
+                // await this.getLogsContract();
             }
             catch (error) {
                 console.log(error);

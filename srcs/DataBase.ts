@@ -58,6 +58,22 @@ export class DataBase {
         }
     }
 
+    async getAllDataFromAddr (fromAddress: string) {
+        const query = {
+            text: "SELECT * FROM contract_logs WHERE fromAddress = $1",
+            values: [fromAddress],
+        };
+        try {
+            loggerServer.trace('Querying database for all data from address:', fromAddress);
+            const result = await this.pool.query(query);
+            loggerServer.info(`All transfer all data from address ${fromAddress} retrieved successfully`);
+            return result.rows;
+        } catch (error) {
+            loggerServer.error('Error querying data:', error);
+            throw error;
+        }
+    }
+
     async getData() {
         const query = {
             text: 'SELECT * FROM contract_logs',
