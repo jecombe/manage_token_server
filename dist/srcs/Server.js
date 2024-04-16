@@ -76,26 +76,28 @@ class Server extends DataBase_js_1.DataBase {
         }));
     }
     getApi() {
+        logger_js_1.loggerServer.info("Starting api");
         this.deleteDatabase();
         this.getAllData();
     }
     parseStartingDb(array) {
         const obj = lodash_1.default.last(array);
-        console.log("++++++++++++++++++++++++++++++>", obj);
-        if (this.contract) {
-            this.contract.test = 14;
+        if (obj && obj.blocknumber !== undefined && this.contract) {
+            this.contract.stopAt = BigInt(obj.blocknumber);
+        }
+        else {
+            // Gérer le cas où obj?.blocknumber est undefined
         }
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             try {
                 this.startApp();
+                this.getApi();
                 yield this.startBdd();
                 const r = yield this.getData();
                 this.parseStartingDb(r);
-                (_a = this.contract) === null || _a === void 0 ? void 0 : _a.startListeningEvents();
-                console.log(r);
+                // this.contract?.startListeningEvents();
                 logger_js_1.loggerServer.trace("Connected to PostgreSQL database");
             }
             catch (error) {

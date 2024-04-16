@@ -43,7 +43,7 @@ export class Contract extends Viem {
     public blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
-    test: number
+    stopAt: bigint
 
 
     constructor(address: string, abi: any[], manager: Manager) {
@@ -51,12 +51,12 @@ export class Contract extends Viem {
         this.unwatch = null;
         this.manager = manager;
         this.save = [];
-        this.test = 0;
+        this.stopAt = BigInt(0);
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-      //  this.startListeningEvents();
+        //  this.startListeningEvents();
 
     }
 
@@ -99,16 +99,17 @@ export class Contract extends Viem {
         }));
     }
 
-    async getEventLogs() {
+    /*async getEventLogs() {
         try {
 
-            console.log(this.test);
             
             const batchSize = BigInt(3000);
             const saveLength = this.save.length;
-
+            
             let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
             let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+
+            
 
             const batchLogs: any[] = await this.cliPublic.getLogs({
                 address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
@@ -137,8 +138,116 @@ export class Contract extends Viem {
             console.log(error);
             return error;
         }
+    }*/
+
+    async getEventsLogsFrom(stopBlock: bigint = BigInt(0)) {
+        try {
+            const batchSize = BigInt(3000);
+            const saveLength = this.save.length;
+
+            let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
+            let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+
+            // Commencez à partir du block actuel
+            let currentBlock = this.blockNumber;
+            console.log(currentBlock, this.stopAt);
+            
+
+            while (currentBlock >= this.stopAt) {
+                const batchLogs: any[] = await this.cliPublic.getLogs({
+                    address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+                    events: parseAbi([
+                        "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                        "event Transfer(address indexed from, address indexed to, uint256 value)",
+                        // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+                    ]),
+                    fromBlock: currentBlock - batchSize,
+                    toBlock: currentBlock,
+                });
+
+                const parsed = this.parseResult(batchLogs);
+                console.log(parsed);
+                
+                if (!_.isEmpty(parsed)) {
+                    //console.log(parsed);
+                    // await this.sendData(parsed);
+                }
+                this.index++;
+
+                if (this.index > 0) await waiting(2000);
+                if (this.save.length > saveLength) return;
+
+                // Mettre à jour le bloc courant pour la prochaine itération
+                currentBlock -= batchSize;
+                console.log("FINISH", currentBlock, this.stopAt);
+
+            }
+            
+            return;
+        } catch (error) {
+            console.log(error);
+            return error;
+        }
     }
 
+    async getEventLogs() {
+        try {
+            console.log(this.stopAt);
+
+            const batchSize = BigInt(3000);
+            const saveLength = this.save.length;
+
+            let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
+            let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+
+            let stopAtBlock: bigint | undefined; // Déclarer une variable pour stocker le bloc à arrêter
+
+            if (this.stopAt !== BigInt(0)) {
+                stopAtBlock = BigInt(this.stopAt);
+            }
+
+            // Si stopAtBlock est défini et inférieur à toBlock, utilisez stopAtBlock comme toBlock
+            if (stopAtBlock && stopAtBlock < toBlock) {
+                toBlock = stopAtBlock;
+            }
+
+            // Descendez chaque bloc jusqu'à rencontrer le bloc stop
+            while (toBlock >= fromBlock) {
+                const batchLogs: any[] = await this.cliPublic.getLogs({
+                    address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+                    events: parseAbi([
+                        "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                        "event Transfer(address indexed from, address indexed to, uint256 value)",
+                        // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+                    ]),
+                    fromBlock: fromBlock,
+                    toBlock: toBlock,
+                });
+
+                const parsed = this.parseResult(batchLogs);
+
+                if (!_.isEmpty(parsed)) {
+                    console.log(parsed);
+                    // await this.sendData(parsed);
+                }
+                this.index++;
+
+                // Si l'index est supérieur à 0, attendez 2000 ms
+                if (this.index > 0) await waiting(2000);
+                if (this.save.length > saveLength) return;
+
+                // Mise à jour de fromBlock et toBlock pour la prochaine itération
+                fromBlock -= batchSize;
+                toBlock -= batchSize;
+            }
+
+            return;
+
+        } catch (error) {
+            console.log(error);
+            return error;
+        }
+    }
 
     getRateLimits() {
         const requestsPerMinute = 1800;
@@ -168,7 +277,7 @@ export class Contract extends Viem {
     async processLogsBatch() {
         const batchStartTime = Date.now();
         try {
-            await this.getEventLogs();
+            await this.getEventsLogsFrom();
             await this.waitingRate(batchStartTime, this.timePerRequest);
         } catch (error) {
             loggerServer.error(error);
@@ -189,7 +298,7 @@ export class Contract extends Viem {
     async startListeningEvents() {
         try {
             await this.getLogsContract();
-           // this.startListener();
+            // this.startListener();
         } catch (error) {
             console.log(error);
         }
