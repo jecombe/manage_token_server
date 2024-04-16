@@ -47,6 +47,7 @@ class Server extends DataBase_js_1.DataBase {
     deleteDatabase() {
         app.get("/api/delete-database", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
+                logger_js_1.loggerServer.info(`delete-database - Receive request from: ${req.ip}`);
                 yield this.deleteAllData();
                 res.json("delete database ok");
             }
@@ -58,6 +59,18 @@ class Server extends DataBase_js_1.DataBase {
     getAllData() {
         app.get("/api/get-all", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
+                logger_js_1.loggerServer.info(`get-all - Receive request from: ${req.ip}`);
+                res.json(yield this.getData());
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getAllDataFromAddr() {
+        app.get("/api/get-all-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                logger_js_1.loggerServer.info(`get-all - Receive request from: ${req.ip}`);
                 res.json(yield this.getData());
             }
             catch (error) {
@@ -68,7 +81,41 @@ class Server extends DataBase_js_1.DataBase {
     getTransactions() {
         app.get("/api/get-all-transac", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
+                logger_js_1.loggerServer.info(`get-all-transac - Receive request from: ${req.ip}`);
                 res.json(yield this.getAllTx());
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getTransactionsFromAddr() {
+        app.get("/api/get-all-transac-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                logger_js_1.loggerServer.info(`get-all-transac-addr - Receive request from: ${req.ip}`);
+                res.json(yield this.getTransfersFromAddress(`${req.query.addr}`));
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getAllowances() {
+        app.get("/api/get-all-allowances", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                logger_js_1.loggerServer.info(`get-all-allowances - Receive request from: ${req.ip}`);
+                res.json(yield this.getAllAproval());
+            }
+            catch (error) {
+                res.status(500).send("Error intern server delete");
+            }
+        }));
+    }
+    getAllowancesFromAddr() {
+        app.get("/api/get-all-allowances-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                logger_js_1.loggerServer.info(`get-all-allowances-addr - Receive request from: ${req.ip}`);
+                res.json(yield this.getAllowanceFromAddress(`${req.query.addr}`));
             }
             catch (error) {
                 res.status(500).send("Error intern server delete");

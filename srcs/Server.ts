@@ -11,6 +11,7 @@ import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
 import abi from "../utils/abi.js";
 import _ from "lodash"
+import { Log } from "viem";
 
 dotenv.config();
 
@@ -149,11 +150,17 @@ export class Server extends DataBase {
     parseStartingDb(array: Res[]) {
         const obj = _.last(array);
         if (obj && obj.blocknumber !== undefined && this.contract) {
-          this.contract.stopAt = BigInt(obj.blocknumber);
+            this.contract.stopAt = BigInt(obj.blocknumber);
         } else {
             // Gérer le cas où obj?.blocknumber est undefined
         }
-        
+
+    }
+
+    startFetchingLogs() {
+        this.contract?.startListener((logs: Log[]) => {
+            loggerServer.trace("Receive logs: ", logs)
+        });
     }
 
 
@@ -166,7 +173,7 @@ export class Server extends DataBase {
             await this.startBdd();
             const r = await this.getData();
             this.parseStartingDb(r)
-           // this.contract?.startListeningEvents();
+            // this.contract?.startListeningEvents();
             loggerServer.trace("Connected to PostgreSQL database");
         } catch (error) {
             loggerServer.error(error)

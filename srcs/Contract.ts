@@ -1,11 +1,12 @@
 
 import dotenv from "dotenv";
-import { formatEther, parseAbi } from "viem";
+import { Log, formatEther, parseAbi } from "viem";
 import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
 import { waiting } from "../utils/utils.js";
+import abi from "../utils/abi.js";
 
 dotenv.config();
 
@@ -177,7 +178,6 @@ export class Contract extends Viem {
                 if (this.index > 0) await waiting(2000);
                 if (this.save.length > saveLength) return;
 
-                // Mettre à jour le bloc courant pour la prochaine itération
                 currentBlock -= batchSize;
                 console.log("FINISH", currentBlock, this.stopAt);
 
@@ -286,19 +286,19 @@ export class Contract extends Viem {
     };
 
 
-    startListener() {
+    startListener(callback: (logs: Log[]) => void): any {
         loggerServer.info("Listening Events smart contract...");
-        this.unwatch = this.cliPublic.watchEvent({
-            onLogs: (logs: any) => loggerServer.trace(logs)
-        })
+        return this.cliPublic.watchContractEvent({
+            address: "0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac",
+            abi,
+            onLogs: callback,
+          });
     }
-
-
 
     async startListeningEvents() {
         try {
-            await this.getLogsContract();
-            // this.startListener();
+            //this.startListener();
+           // await this.getLogsContract();
         } catch (error) {
             console.log(error);
         }
