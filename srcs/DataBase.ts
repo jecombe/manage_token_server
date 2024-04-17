@@ -39,11 +39,11 @@ export class DataBase {
             text: 'DELETE FROM contract_logs',
         };
         try {
-            loggerServer.trace('All data are delete waiting...');
+            loggerServer.trace('deleteAllData');
             await this.pool.query(query);
-            loggerServer.info('All data deleted successfully');
         } catch (error) {
             loggerServer.error('Error deleting data:', error);
+            throw error;
         }
     }
 
@@ -53,12 +53,11 @@ export class DataBase {
             values: [fromAddress],
         };
         try {
-            loggerServer.trace('Querying database for all data from address:', fromAddress);
+            loggerServer.trace('getAllDataFromAddr:', fromAddress);
             const result: QueryResult = await this.pool.query(query);
-            loggerServer.info(`All transfer all data from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error querying data:', error);
+            loggerServer.error('getAllDataFromAddr', error);
             throw error;
         }
     }
@@ -68,12 +67,11 @@ export class DataBase {
             text: 'SELECT * FROM contract_logs',
         };
         try {
-            loggerServer.trace('Fetching data...');
+            loggerServer.trace('getData');
             const result: QueryResult = await this.pool.query(query);
-            loggerServer.info('Data fetched successfully');
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error fetching data:', error);
+            loggerServer.error('getData:', error);
             throw error;
         }
     }
@@ -83,11 +81,11 @@ export class DataBase {
             text: "SELECT * FROM contract_logs WHERE eventName='Transfer'"
         };
         try {
-            loggerServer.trace('get data');
+            loggerServer.trace('getAllTx');
             const result: QueryResult = await this.pool.query(query);
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error inserting data:', error);
+            loggerServer.error('getAllTx:', error);
             throw error;
         }
     }
@@ -98,12 +96,11 @@ export class DataBase {
             values: [fromAddress],
         };
         try {
-            loggerServer.trace('Querying database for transfers from address:', fromAddress);
+            loggerServer.trace('getTransfersFromAddress:', fromAddress);
             const result: QueryResult = await this.pool.query(query);
-            loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error querying data:', error);
+            loggerServer.fatal('getTransfersFromAddress:', error);
             throw error;
         }
     }
@@ -114,12 +111,11 @@ export class DataBase {
             values: [fromAddress],
         };
         try {
-            loggerServer.trace('Querying database for allowances from address:', fromAddress);
+            loggerServer.trace('getAllowanceFromAddress:', fromAddress);
             const result: QueryResult = await this.pool.query(query);
-            loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error querying data:', error);
+            loggerServer.fatal('getAllowanceFromAddress:', error);
             throw error;
         }
     }
@@ -130,11 +126,11 @@ export class DataBase {
             text: "SELECT * FROM contract_logs WHERE eventName='Approval'"
         };
         try {
-            loggerServer.trace('get data');
+            loggerServer.trace('getAllAproval');
             const result: QueryResult = await this.pool.query(query);
             return result.rows;
         } catch (error) {
-            loggerServer.error('Error inserting data:', error);
+            loggerServer.error('getAllAproval:', error);
             throw error;
         }
     }
@@ -163,6 +159,7 @@ export class DataBase {
             await this.pool.connect();
             loggerServer.info("Postgres is connected")
         } catch (error) {
+            loggerServer.fatal("startBdd: ", error)
             throw error;
         }
     }

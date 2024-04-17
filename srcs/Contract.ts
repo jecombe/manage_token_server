@@ -153,23 +153,30 @@ export class Contract extends Viem {
             });
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
-            console.log(parsed);
 
             if (!_.isEmpty(parsed)) {
                 const checkExisting: ParsedLog[] = this.isExist(parsed);
-                console.log("=====================================================00", checkExisting);
-
-                if (!_.isEmpty(checkExisting)) await this.sendData(checkExisting);
+                if (!_.isEmpty(checkExisting)) {
+                    loggerServer.trace("Adding new thing: ", checkExisting);
+                    await this.sendData(checkExisting);
+                } else {
+                    loggerServer.error("Log already existe", checkExisting)
+                }
+            } else {
+                loggerServer.debug("Log is empty", parsed)
             }
+
             this.index++;
 
             if (this.index > 0) await waiting(2000);
 
-            if (this.save.length > saveLength) return;
-
+            if (this.save.length > saveLength) {
+                loggerServer.debug("Ending while", this.save.length, saveLength)
+                return;
+            }
             return;
         } catch (error) {
-            console.log(error);
+            loggerServer.fatal("getEventsLogsFrom: ", error)
             throw error;
         }
     }
@@ -264,7 +271,7 @@ export class Contract extends Viem {
             await this.getEventsLogsFrom();
             await this.waitingRate(batchStartTime, this.timePerRequest);
         } catch (error) {
-            loggerServer.error(error);
+            loggerServer.error("processLogsBatch: ", error);
             throw error;
         }
 
@@ -285,7 +292,8 @@ export class Contract extends Viem {
             //this.startListener();
             await this.getLogsContract();
         } catch (error) {
-            console.log(error);
+            loggerServer.fatal("startListeningEvents: ", error)
+            throw error;
         }
 
     }
