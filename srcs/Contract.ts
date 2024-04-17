@@ -1,64 +1,40 @@
 
 import dotenv from "dotenv";
-import { Log, formatEther, parseAbi } from "viem";
+import { GetLogsReturnType, Log, WatchContractEventReturnType, formatEther, parseAbi } from "viem";
 import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
-import { waiting } from "../utils/utils.js";
+import { existsBigIntInArray, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
-
+import { Abi } from 'abitype'
+import { LogEntry, ParsedLog } from "../utils/interfaces.js";
 dotenv.config();
 
-interface LogEntry {
-    args: {
-        from?: string;
-        to?: string;
-        value?: bigint; // Adapter le type de la valeur en fonction de ce que getLogs renvoie
-        owner?: string; // Ajouter les propriétés manquantes si nécessaire
-        sender?: string; // Ajouter les propriétés manquantes si nécessaire
-    };
-    eventName: string;
-    blockNumber: bigint;
-    transactionHash: string;
-}
-
-interface ParsedLog {
-    eventName: string;
-    from?: string;
-    to?: string;
-    owner?: string;
-    sender?: string;
-    blockNumber: string;
-    value: number;
-    transactionHash: string;
-}
 
 
 export class Contract extends Viem {
 
-    unwatch: any | null;
     manager: Manager;
-    save: ParsedLog[] = [];
+    save: ParsedLog[];
     index: number;
     public blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
     stopAt: bigint
+    saveBlockNum: bigint[];
 
 
-    constructor(address: string, abi: any[], manager: Manager) {
+    constructor(address: string, abi: Abi, manager: Manager) {
         super(address, abi);
-        this.unwatch = null;
         this.manager = manager;
         this.save = [];
         this.stopAt = BigInt(0);
+        this.saveBlockNum = []
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        //  this.startListeningEvents();
-
     }
 
     parseNumberToEth(number: string) {
@@ -84,8 +60,8 @@ export class Contract extends Viem {
             }
 
             if (currentLog.eventName === "Approval") {
-                parsedLog.owner = currentLog.args.owner;
-                parsedLog.sender = currentLog.args.sender;
+                parsedLog.from = currentLog.args.owner;
+                parsedLog.to = currentLog.args.sender;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
 
@@ -94,10 +70,17 @@ export class Contract extends Viem {
         }, []);
     }
 
-    async sendData(parsed: any[]) {
-        await Promise.all(parsed.map(async (el: any) => {
-            await this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value);
-        }));
+    async sendData(parsed: ParsedLog[]): Promise<void> {
+        try {
+            await Promise.all(parsed.map(async (el: ParsedLog) => {
+                await this.manager.insertData(el);
+            }));
+
+        } catch (error) {
+            loggerServer.fatal("sendData: ", error);
+            throw error;
+        }
+
     }
 
     /*async getEventLogs() {
@@ -141,7 +124,17 @@ export class Contract extends Viem {
         }
     }*/
 
-    async getEventsLogsFrom(stopBlock: bigint = BigInt(0)) {
+    isExist(array: ParsedLog[]): ParsedLog[] {
+
+        return array.reduce((acc: ParsedLog[], el: ParsedLog) => {
+            if (!existsBigIntInArray(this.saveBlockNum, BigInt(el.blockNumber))) {
+                acc.push(el)
+            }
+            return acc;
+        }, [])
+    }
+
+    async getEventsLogsFrom(): Promise<void> {
         try {
             const batchSize = BigInt(3000);
             const saveLength = this.save.length;
@@ -149,51 +142,40 @@ export class Contract extends Viem {
             let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
             let toBlock = this.blockNumber - batchSize * BigInt(this.index);
 
-            // Commencez à partir du block actuel
-            let currentBlock = this.blockNumber;
-            console.log(currentBlock, this.stopAt);
-            
+            const batchLogs: LogEntry[] = await this.cliPublic.getLogs({
+                address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+                events: parseAbi([
+                    "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                    "event Transfer(address indexed from, address indexed to, uint256 value)",
+                ]),
+                fromBlock,
+                toBlock,
+            });
 
-            while (currentBlock >= this.stopAt) {
-                const batchLogs: any[] = await this.cliPublic.getLogs({
-                    address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
-                    events: parseAbi([
-                        "event Approval(address indexed owner, address indexed sender, uint256 value)",
-                        "event Transfer(address indexed from, address indexed to, uint256 value)",
-                        // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
-                    ]),
-                    fromBlock: currentBlock - batchSize,
-                    toBlock: currentBlock,
-                });
+            const parsed: ParsedLog[] = this.parseResult(batchLogs);
+            console.log(parsed);
 
-                const parsed = this.parseResult(batchLogs);
-                console.log(parsed);
-                
-                if (!_.isEmpty(parsed)) {
-                    //console.log(parsed);
-                    // await this.sendData(parsed);
-                }
-                this.index++;
+            if (!_.isEmpty(parsed)) {
+                const checkExisting: ParsedLog[] = this.isExist(parsed);
+                console.log("=====================================================00", checkExisting);
 
-                if (this.index > 0) await waiting(2000);
-                if (this.save.length > saveLength) return;
-
-                currentBlock -= batchSize;
-                console.log("FINISH", currentBlock, this.stopAt);
-
+                if (!_.isEmpty(checkExisting)) await this.sendData(checkExisting);
             }
-            
+            this.index++;
+
+            if (this.index > 0) await waiting(2000);
+
+            if (this.save.length > saveLength) return;
+
             return;
         } catch (error) {
             console.log(error);
-            return error;
+            throw error;
         }
     }
 
-    async getEventLogs() {
+    /*async getEventLogs() {
         try {
-            console.log(this.stopAt);
-
             const batchSize = BigInt(3000);
             const saveLength = this.save.length;
 
@@ -223,12 +205,13 @@ export class Contract extends Viem {
                     fromBlock: fromBlock,
                     toBlock: toBlock,
                 });
-
+                console.log("FETCHING ");
+                
                 const parsed = this.parseResult(batchLogs);
 
                 if (!_.isEmpty(parsed)) {
                     console.log(parsed);
-                    // await this.sendData(parsed);
+                    await this.sendData(parsed);
                 }
                 this.index++;
 
@@ -247,15 +230,15 @@ export class Contract extends Viem {
             console.log(error);
             return error;
         }
-    }
+    }*/
 
-    getRateLimits() {
+    getRateLimits(): number {
         const requestsPerMinute = 1800;
         const millisecondsPerMinute = 60000;
         return millisecondsPerMinute / requestsPerMinute;
     };
 
-    async getLogsContract() {
+    async getLogsContract(): Promise<void> {
         try {
             this.blockNumber = BigInt(await this.getActualBlock());
 
@@ -263,42 +246,44 @@ export class Contract extends Viem {
                 await this.processLogsBatch();
             }
         } catch (error) {
-            console.error(error);
+            loggerServer.fatal("getLogsContract: ", error)
+            throw error;
         }
     };
 
-    async waitingRate(batchStartTime: number, timePerRequest: number) {
+    async waitingRate(batchStartTime: number, timePerRequest: number): Promise<void> {
         const elapsedTime = Date.now() - batchStartTime;
         const waitTime = Math.max(0, timePerRequest - elapsedTime);
         return waiting(waitTime);
     };
 
 
-    async processLogsBatch() {
-        const batchStartTime = Date.now();
+    async processLogsBatch(): Promise<void> {
+        const batchStartTime: number = Date.now();
         try {
             await this.getEventsLogsFrom();
             await this.waitingRate(batchStartTime, this.timePerRequest);
         } catch (error) {
             loggerServer.error(error);
+            throw error;
         }
 
     };
 
 
-    startListener(callback: (logs: Log[]) => void): any {
+    startListener(callback: (logs: Log[]) => void): WatchContractEventReturnType {
         loggerServer.info("Listening Events smart contract...");
         return this.cliPublic.watchContractEvent({
             address: "0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac",
             abi,
             onLogs: callback,
-          });
+        });
     }
 
-    async startListeningEvents() {
+    async startListeningEvents(): Promise<void> {
         try {
             //this.startListener();
-           // await this.getLogsContract();
+            await this.getLogsContract();
         } catch (error) {
             console.log(error);
         }

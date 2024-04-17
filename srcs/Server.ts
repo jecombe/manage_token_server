@@ -1,11 +1,10 @@
 
 import dotenv from "dotenv";
 import { loggerServer } from "../utils/logger.js";
-import { sepolia } from "viem/chains";
 
 import { DataBase } from "./DataBase.js";
 
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
@@ -19,7 +18,7 @@ const app = express();
 const port = 8000;
 
 
-interface Res {
+interface ResultBdd {
     blocknumber: string;
     eventname: string;
     fromaddress: string;
@@ -37,7 +36,7 @@ export class Server extends DataBase {
         this.contract = null;
     }
 
-    setManager(manager: Manager) {
+    setManager(manager: Manager): void {
         this.contract = new Contract(`${process.env.CONTRACT}`, abi, manager);
     }
 
@@ -54,11 +53,10 @@ export class Server extends DataBase {
         });
     }
 
-    deleteDatabase() {
+    deleteDatabase(): void {
         app.delete("/api/delete-database", async (req, res) => {
             try {
-                loggerServer.info(`delete-database - Receive request from: ${req.ip}`)
-
+                loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
                 await this.deleteAllData();
                 res.json("delete database ok");
             } catch (error) {
@@ -69,11 +67,10 @@ export class Server extends DataBase {
 
 
 
-    getAllData() {
+    getAllData(): void {
         app.get("/api/get-all", async (req, res) => {
             try {
-                loggerServer.info(`get-all - Receive request from: ${req.ip}`)
-
+                loggerServer.trace(`get-all - Receive request from: ${req.ip}`)
                 res.json(await this.getData());
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -81,22 +78,22 @@ export class Server extends DataBase {
         });
     }
 
-    getAllLogsFromAddr() {
+    getAllLogsFromAddr(): void {
         app.get("/api/get-all-addr", async (req, res) => {
             try {
-                loggerServer.info(`get-all-addr - Receive request from: ${req.ip}`)
+                loggerServer.trace(`get-all-addr - Receive request from: ${req.ip}`)
 
-               res.json(await this.getAllDataFromAddr(`${req.query.userAddress}`));
+                res.json(await this.getAllDataFromAddr(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
             }
         });
     }
 
-    getTransactions() {
+    getTransactions(): void {
         app.get("/api/get-all-transac", async (req, res) => {
             try {
-                loggerServer.info(`get-all-transac - Receive request from: ${req.ip}`)
+                loggerServer.trace(`get-all-transac - Receive request from: ${req.ip}`)
                 res.json(await this.getAllTx());
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -104,10 +101,10 @@ export class Server extends DataBase {
         });
     }
 
-    getTransactionsFromAddr() {
+    getTransactionsFromAddr(): void {
         app.get("/api/get-all-transac-addr", async (req, res) => {
             try {
-                loggerServer.info(`get-all-transac-addr - Receive request from: ${req.ip}`)
+                loggerServer.trace(`get-all-transac-addr - Receive request from: ${req.ip}`)
                 res.json(await this.getTransfersFromAddress(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -116,10 +113,10 @@ export class Server extends DataBase {
     }
 
 
-    getAllowances() {
+    getAllowances(): void {
         app.get("/api/get-all-allowances", async (req, res) => {
             try {
-                loggerServer.info(`get-all-allowances - Receive request from: ${req.ip}`)
+                loggerServer.trace(`get-all-allowances - Receive request from: ${req.ip}`)
                 res.json(await this.getAllAproval());
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -127,10 +124,10 @@ export class Server extends DataBase {
         });
     }
 
-    getAllowancesFromAddr() {
+    getAllowancesFromAddr(): void {
         app.get("/api/get-all-allowances-addr", async (req, res) => {
             try {
-                loggerServer.info(`get-all-allowances-addr - Receive request from`, req.ip)
+                loggerServer.trace(`get-all-allowances-addr - Receive request from`, req.ip)
                 res.json(await this.getAllowanceFromAddress(`${req.query.userAddress}`));
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -140,7 +137,6 @@ export class Server extends DataBase {
 
 
     getApi() {
-        loggerServer.info("Starting api")
         this.deleteDatabase()
         this.getAllData();
         this.getAllLogsFromAddr()
@@ -148,38 +144,34 @@ export class Server extends DataBase {
         this.getTransactionsFromAddr()
         this.getAllowances()
         this.getAllowancesFromAddr()
+
+        loggerServer.info("Api is started")
     }
 
 
 
-    parseStartingDb(array: Res[]) {
-        const obj = _.last(array);
-        if (obj && obj.blocknumber !== undefined && this.contract) {
-            this.contract.stopAt = BigInt(obj.blocknumber);
-        } else {
-            // Gérer le cas où obj?.blocknumber est undefined
-        }
-
+    parseStartingDb(array: ResultBdd[]): void {
+        array.map((el: ResultBdd) => {
+            if (el.blocknumber !== undefined && this.contract) {
+                this.contract.saveBlockNum.push(BigInt(el.blocknumber))
+            }
+        })
     }
 
-    startFetchingLogs() {
+    startFetchingLogs(): void {
         this.contract?.startListener((logs: Log[]) => {
             loggerServer.trace("Receive logs: ", logs)
         });
     }
 
-
-
-
-    async start() {
+    async start(): Promise<void> {
         try {
             this.startApp();
             await this.startBdd();
             this.getApi();
-            const r = await this.getData();
-            this.parseStartingDb(r)
-            // this.contract?.startListeningEvents();
-            loggerServer.trace("Connected to PostgreSQL database");
+            const readAll: ResultBdd[] = await this.getData();
+            this.parseStartingDb(readAll)
+            this.contract?.startListeningEvents();
         } catch (error) {
             loggerServer.error(error)
 

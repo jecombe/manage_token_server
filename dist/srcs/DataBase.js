@@ -1,27 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -37,9 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataBase = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
-const pg_1 = __importStar(require("pg"));
+const pg_1 = require("pg");
 const logger_js_1 = require("../utils/logger.js");
-const { Client } = pg_1.default;
 dotenv_1.default.config();
 class DataBase {
     constructor() {
@@ -120,7 +96,7 @@ class DataBase {
             }
             catch (error) {
                 logger_js_1.loggerServer.error('Error inserting data:', error);
-                return error;
+                throw error;
             }
         });
     }
@@ -172,15 +148,15 @@ class DataBase {
             }
             catch (error) {
                 logger_js_1.loggerServer.error('Error inserting data:', error);
-                return error;
+                throw error;
             }
         });
     }
-    insertData(blockNumber, eventName, fromAddress, toAddress, value) {
+    insertData(parsedLog) {
         return __awaiter(this, void 0, void 0, function* () {
             const query = {
                 text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
-                values: [blockNumber, eventName, fromAddress, toAddress, value],
+                values: [parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
             };
             try {
                 logger_js_1.loggerServer.trace('Data insert wating...');
@@ -189,19 +165,20 @@ class DataBase {
             }
             catch (error) {
                 logger_js_1.loggerServer.error('Error inserting data:', error);
-                return error;
+                throw error;
             }
         });
     }
     startBdd() {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.pool.connect();
+            try {
+                yield this.pool.connect();
+                logger_js_1.loggerServer.info("Postgres is connected");
+            }
+            catch (error) {
+                throw error;
+            }
         });
-    }
-    addLogs() {
-        console.log("Add Logs DATABASE");
-        //this.insertData(0, "eventName", "fromAddress", "toAddress", 1)
-        this.getData();
     }
 }
 exports.DataBase = DataBase;

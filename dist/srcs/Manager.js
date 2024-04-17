@@ -25,21 +25,12 @@ class Manager extends Server_1.Server {
     startServer() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
+                logger_1.loggerServer.info("============= Starting application manager token =============");
                 yield this.start();
-                //this.contract.startListeningEvents();
             }
             catch (error) {
                 logger_1.loggerServer.fatal("StartServer: ", error);
             }
-        });
-    }
-    addData() {
-        console.log("MANAGER");
-        this.addLogs();
-    }
-    test() {
-        return __awaiter(this, void 0, void 0, function* () {
-            // Votre logique de test
         });
     }
 }

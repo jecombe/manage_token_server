@@ -24,16 +24,14 @@ dotenv_1.default.config();
 class Contract extends Viem_js_1.Viem {
     constructor(address, abi, manager) {
         super(address, abi);
-        this.save = [];
-        this.unwatch = null;
         this.manager = manager;
         this.save = [];
         this.stopAt = BigInt(0);
+        this.saveBlockNum = [];
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
-        //  this.startListeningEvents();
     }
     parseNumberToEth(number) {
         const numberBigInt = BigInt(number);
@@ -54,8 +52,8 @@ class Contract extends Viem_js_1.Viem {
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
             if (currentLog.eventName === "Approval") {
-                parsedLog.owner = currentLog.args.owner;
-                parsedLog.sender = currentLog.args.sender;
+                parsedLog.from = currentLog.args.owner;
+                parsedLog.to = currentLog.args.sender;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
             accumulator.push(parsedLog);
@@ -64,9 +62,15 @@ class Contract extends Viem_js_1.Viem {
     }
     sendData(parsed) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield Promise.all(parsed.map((el) => __awaiter(this, void 0, void 0, function* () {
-                yield this.manager.insertData(el.blockNumber, el.eventName, el.from, el.to, el.value);
-            })));
+            try {
+                yield Promise.all(parsed.map((el) => __awaiter(this, void 0, void 0, function* () {
+                    yield this.manager.insertData(el);
+                })));
+            }
+            catch (error) {
+                logger_js_1.loggerServer.fatal("sendData: ", error);
+                throw error;
+            }
         });
     }
     /*async getEventLogs() {
@@ -109,100 +113,108 @@ class Contract extends Viem_js_1.Viem {
             return error;
         }
     }*/
-    getEventsLogsFrom() {
-        return __awaiter(this, arguments, void 0, function* (stopBlock = BigInt(0)) {
-            try {
-                const batchSize = BigInt(3000);
-                const saveLength = this.save.length;
-                let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
-                let toBlock = this.blockNumber - batchSize * BigInt(this.index);
-                // Commencez à partir du block actuel
-                let currentBlock = this.blockNumber;
-                console.log(currentBlock, this.stopAt);
-                while (currentBlock >= this.stopAt) {
-                    const batchLogs = yield this.cliPublic.getLogs({
-                        address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
-                        events: (0, viem_1.parseAbi)([
-                            "event Approval(address indexed owner, address indexed sender, uint256 value)",
-                            "event Transfer(address indexed from, address indexed to, uint256 value)",
-                            // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
-                        ]),
-                        fromBlock: currentBlock - batchSize,
-                        toBlock: currentBlock,
-                    });
-                    const parsed = this.parseResult(batchLogs);
-                    console.log(parsed);
-                    if (!lodash_1.default.isEmpty(parsed)) {
-                        //console.log(parsed);
-                        // await this.sendData(parsed);
-                    }
-                    this.index++;
-                    if (this.index > 0)
-                        yield (0, utils_js_1.waiting)(2000);
-                    if (this.save.length > saveLength)
-                        return;
-                    currentBlock -= batchSize;
-                    console.log("FINISH", currentBlock, this.stopAt);
-                }
-                return;
+    isExist(array) {
+        return array.reduce((acc, el) => {
+            if (!(0, utils_js_1.existsBigIntInArray)(this.saveBlockNum, BigInt(el.blockNumber))) {
+                acc.push(el);
             }
-            catch (error) {
-                console.log(error);
-                return error;
-            }
-        });
+            return acc;
+        }, []);
     }
-    getEventLogs() {
+    getEventsLogsFrom() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log(this.stopAt);
                 const batchSize = BigInt(3000);
                 const saveLength = this.save.length;
                 let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
                 let toBlock = this.blockNumber - batchSize * BigInt(this.index);
-                let stopAtBlock; // Déclarer une variable pour stocker le bloc à arrêter
-                if (this.stopAt !== BigInt(0)) {
-                    stopAtBlock = BigInt(this.stopAt);
+                const batchLogs = yield this.cliPublic.getLogs({
+                    address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+                    events: (0, viem_1.parseAbi)([
+                        "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                        "event Transfer(address indexed from, address indexed to, uint256 value)",
+                    ]),
+                    fromBlock,
+                    toBlock,
+                });
+                const parsed = this.parseResult(batchLogs);
+                console.log(parsed);
+                if (!lodash_1.default.isEmpty(parsed)) {
+                    const checkExisting = this.isExist(parsed);
+                    console.log("=====================================================00", checkExisting);
+                    if (!lodash_1.default.isEmpty(checkExisting))
+                        yield this.sendData(checkExisting);
                 }
-                // Si stopAtBlock est défini et inférieur à toBlock, utilisez stopAtBlock comme toBlock
-                if (stopAtBlock && stopAtBlock < toBlock) {
-                    toBlock = stopAtBlock;
-                }
-                // Descendez chaque bloc jusqu'à rencontrer le bloc stop
-                while (toBlock >= fromBlock) {
-                    const batchLogs = yield this.cliPublic.getLogs({
-                        address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
-                        events: (0, viem_1.parseAbi)([
-                            "event Approval(address indexed owner, address indexed sender, uint256 value)",
-                            "event Transfer(address indexed from, address indexed to, uint256 value)",
-                            // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
-                        ]),
-                        fromBlock: fromBlock,
-                        toBlock: toBlock,
-                    });
-                    const parsed = this.parseResult(batchLogs);
-                    if (!lodash_1.default.isEmpty(parsed)) {
-                        console.log(parsed);
-                        // await this.sendData(parsed);
-                    }
-                    this.index++;
-                    // Si l'index est supérieur à 0, attendez 2000 ms
-                    if (this.index > 0)
-                        yield (0, utils_js_1.waiting)(2000);
-                    if (this.save.length > saveLength)
-                        return;
-                    // Mise à jour de fromBlock et toBlock pour la prochaine itération
-                    fromBlock -= batchSize;
-                    toBlock -= batchSize;
-                }
+                this.index++;
+                if (this.index > 0)
+                    yield (0, utils_js_1.waiting)(2000);
+                if (this.save.length > saveLength)
+                    return;
                 return;
             }
             catch (error) {
                 console.log(error);
-                return error;
+                throw error;
             }
         });
     }
+    /*async getEventLogs() {
+        try {
+            const batchSize = BigInt(3000);
+            const saveLength = this.save.length;
+
+            let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
+            let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+
+            let stopAtBlock: bigint | undefined; // Déclarer une variable pour stocker le bloc à arrêter
+
+            if (this.stopAt !== BigInt(0)) {
+                stopAtBlock = BigInt(this.stopAt);
+            }
+
+            // Si stopAtBlock est défini et inférieur à toBlock, utilisez stopAtBlock comme toBlock
+            if (stopAtBlock && stopAtBlock < toBlock) {
+                toBlock = stopAtBlock;
+            }
+
+            // Descendez chaque bloc jusqu'à rencontrer le bloc stop
+            while (toBlock >= fromBlock) {
+                const batchLogs: any[] = await this.cliPublic.getLogs({
+                    address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+                    events: parseAbi([
+                        "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                        "event Transfer(address indexed from, address indexed to, uint256 value)",
+                        // "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+                    ]),
+                    fromBlock: fromBlock,
+                    toBlock: toBlock,
+                });
+                console.log("FETCHING ");
+                
+                const parsed = this.parseResult(batchLogs);
+
+                if (!_.isEmpty(parsed)) {
+                    console.log(parsed);
+                    await this.sendData(parsed);
+                }
+                this.index++;
+
+                // Si l'index est supérieur à 0, attendez 2000 ms
+                if (this.index > 0) await waiting(2000);
+                if (this.save.length > saveLength) return;
+
+                // Mise à jour de fromBlock et toBlock pour la prochaine itération
+                fromBlock -= batchSize;
+                toBlock -= batchSize;
+            }
+
+            return;
+
+        } catch (error) {
+            console.log(error);
+            return error;
+        }
+    }*/
     getRateLimits() {
         const requestsPerMinute = 1800;
         const millisecondsPerMinute = 60000;
@@ -218,7 +230,8 @@ class Contract extends Viem_js_1.Viem {
                 }
             }
             catch (error) {
-                console.error(error);
+                logger_js_1.loggerServer.fatal("getLogsContract: ", error);
+                throw error;
             }
         });
     }
@@ -240,6 +253,7 @@ class Contract extends Viem_js_1.Viem {
             }
             catch (error) {
                 logger_js_1.loggerServer.error(error);
+                throw error;
             }
         });
     }
@@ -256,7 +270,7 @@ class Contract extends Viem_js_1.Viem {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 //this.startListener();
-                // await this.getLogsContract();
+                yield this.getLogsContract();
             }
             catch (error) {
                 console.log(error);

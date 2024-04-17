@@ -21,10 +21,9 @@ class Viem {
     constructor(address, abi) {
         this.addressContract = address;
         this.abi = abi;
-        this.cliPublic = this.getContractApp();
-        //this.cli = this.getContractApp()
+        this.cliPublic = this.connectPublicClient();
     }
-    ConnectPublicClient() {
+    connectPublicClient() {
         return (0, viem_1.createPublicClient)({
             chain: chains_1.sepolia,
             transport: (0, viem_1.http)(),
@@ -34,19 +33,6 @@ class Viem {
         return __awaiter(this, void 0, void 0, function* () {
             return this.cliPublic.getBlockNumber();
         });
-    }
-    getContractApp() {
-        return this.ConnectPublicClient();
-        /*return getContract({
-            address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
-            abi: this.abi,
-            client: {
-              public: publicClient,
-            },
-        })*/
-    }
-    startListeningEvents() {
-        //this.startListener();
     }
 }
 exports.Viem = Viem;

@@ -20,7 +20,6 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const Contract_js_1 = require("./Contract.js");
 const abi_js_1 = __importDefault(require("../utils/abi.js"));
-const lodash_1 = __importDefault(require("lodash"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = 8000;
@@ -45,9 +44,9 @@ class Server extends DataBase_js_1.DataBase {
         });
     }
     deleteDatabase() {
-        app.get("/api/delete-database", (req, res) => __awaiter(this, void 0, void 0, function* () {
+        app.delete("/api/delete-database", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`delete-database - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
                 yield this.deleteAllData();
                 res.json("delete database ok");
             }
@@ -59,7 +58,7 @@ class Server extends DataBase_js_1.DataBase {
     getAllData() {
         app.get("/api/get-all", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`get-all - Receive request from: ${req.ip}`);
                 res.json(yield this.getData());
             }
             catch (error) {
@@ -70,7 +69,7 @@ class Server extends DataBase_js_1.DataBase {
     getAllLogsFromAddr() {
         app.get("/api/get-all-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-addr - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`get-all-addr - Receive request from: ${req.ip}`);
                 res.json(yield this.getAllDataFromAddr(`${req.query.userAddress}`));
             }
             catch (error) {
@@ -81,7 +80,7 @@ class Server extends DataBase_js_1.DataBase {
     getTransactions() {
         app.get("/api/get-all-transac", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-transac - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`get-all-transac - Receive request from: ${req.ip}`);
                 res.json(yield this.getAllTx());
             }
             catch (error) {
@@ -92,7 +91,7 @@ class Server extends DataBase_js_1.DataBase {
     getTransactionsFromAddr() {
         app.get("/api/get-all-transac-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-transac-addr - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`get-all-transac-addr - Receive request from: ${req.ip}`);
                 res.json(yield this.getTransfersFromAddress(`${req.query.userAddress}`));
             }
             catch (error) {
@@ -103,7 +102,7 @@ class Server extends DataBase_js_1.DataBase {
     getAllowances() {
         app.get("/api/get-all-allowances", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-allowances - Receive request from: ${req.ip}`);
+                logger_js_1.loggerServer.trace(`get-all-allowances - Receive request from: ${req.ip}`);
                 res.json(yield this.getAllAproval());
             }
             catch (error) {
@@ -114,7 +113,7 @@ class Server extends DataBase_js_1.DataBase {
     getAllowancesFromAddr() {
         app.get("/api/get-all-allowances-addr", (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                logger_js_1.loggerServer.info(`get-all-allowances-addr - Receive request from`, req.ip);
+                logger_js_1.loggerServer.trace(`get-all-allowances-addr - Receive request from`, req.ip);
                 res.json(yield this.getAllowanceFromAddress(`${req.query.userAddress}`));
             }
             catch (error) {
@@ -123,7 +122,6 @@ class Server extends DataBase_js_1.DataBase {
         }));
     }
     getApi() {
-        logger_js_1.loggerServer.info("Starting api");
         this.deleteDatabase();
         this.getAllData();
         this.getAllLogsFromAddr();
@@ -131,15 +129,14 @@ class Server extends DataBase_js_1.DataBase {
         this.getTransactionsFromAddr();
         this.getAllowances();
         this.getAllowancesFromAddr();
+        logger_js_1.loggerServer.info("Api is started");
     }
     parseStartingDb(array) {
-        const obj = lodash_1.default.last(array);
-        if (obj && obj.blocknumber !== undefined && this.contract) {
-            this.contract.stopAt = BigInt(obj.blocknumber);
-        }
-        else {
-            // Gérer le cas où obj?.blocknumber est undefined
-        }
+        array.map((el) => {
+            if (el.blocknumber !== undefined && this.contract) {
+                this.contract.saveBlockNum.push(BigInt(el.blocknumber));
+            }
+        });
     }
     startFetchingLogs() {
         var _a;
@@ -149,14 +146,14 @@ class Server extends DataBase_js_1.DataBase {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
                 this.startApp();
                 yield this.startBdd();
                 this.getApi();
-                const r = yield this.getData();
-                this.parseStartingDb(r);
-                // this.contract?.startListeningEvents();
-                logger_js_1.loggerServer.trace("Connected to PostgreSQL database");
+                const readAll = yield this.getData();
+                this.parseStartingDb(readAll);
+                (_a = this.contract) === null || _a === void 0 ? void 0 : _a.startListeningEvents();
             }
             catch (error) {
                 logger_js_1.loggerServer.error(error);

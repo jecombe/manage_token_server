@@ -1,26 +1,15 @@
 
 import dotenv from "dotenv";
 
-import pkg, { Pool } from 'pg';
+import { Pool, PoolClient, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
-const { Client } = pkg;
 import _ from "lodash"
+import { ParsedLog, ResultBdd } from "../utils/interfaces.js";
 
 dotenv.config();
 
 
-interface LogEntry {
-    args: {
-        from?: string;
-        to?: string;
-        value?: bigint; 
-        owner?: string;
-        sender?: string;
-    };
-    eventName: string;
-    blockNumber: bigint;
-    transactionHash: string;
-}
+
 
 export class DataBase {
 
@@ -45,7 +34,7 @@ export class DataBase {
          })*/
     }
 
-    async deleteAllData() {
+    async deleteAllData(): Promise<void> {
         const query = {
             text: 'DELETE FROM contract_logs',
         };
@@ -58,14 +47,14 @@ export class DataBase {
         }
     }
 
-    async getAllDataFromAddr (fromAddress: string) {
+    async getAllDataFromAddr(fromAddress: string): Promise<ResultBdd[]> {
         const query = {
             text: "SELECT * FROM contract_logs WHERE fromAddress = $1",
             values: [fromAddress],
         };
         try {
             loggerServer.trace('Querying database for all data from address:', fromAddress);
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             loggerServer.info(`All transfer all data from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
@@ -74,13 +63,13 @@ export class DataBase {
         }
     }
 
-    async getData() {
+    async getData(): Promise<ResultBdd[]> {
         const query = {
             text: 'SELECT * FROM contract_logs',
         };
         try {
             loggerServer.trace('Fetching data...');
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             loggerServer.info('Data fetched successfully');
             return result.rows;
         } catch (error) {
@@ -89,28 +78,28 @@ export class DataBase {
         }
     }
 
-    async getAllTx() {
+    async getAllTx(): Promise<ResultBdd[]> {
         const query = {
             text: "SELECT * FROM contract_logs WHERE eventName='Transfer'"
         };
         try {
             loggerServer.trace('get data');
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             return result.rows;
         } catch (error) {
             loggerServer.error('Error inserting data:', error);
-            return error;
+            throw error;
         }
     }
 
-    async getTransfersFromAddress(fromAddress: string) {
+    async getTransfersFromAddress(fromAddress: string): Promise<ResultBdd[]> {
         const query = {
             text: "SELECT * FROM contract_logs WHERE eventName = 'Transfer' AND fromAddress = $1",
             values: [fromAddress],
         };
         try {
             loggerServer.trace('Querying database for transfers from address:', fromAddress);
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
@@ -119,14 +108,14 @@ export class DataBase {
         }
     }
 
-    async getAllowanceFromAddress(fromAddress: string) {
+    async getAllowanceFromAddress(fromAddress: string): Promise<ResultBdd[]> {
         const query = {
             text: "SELECT * FROM contract_logs WHERE eventName = 'Allowance' AND fromAddress = $1",
             values: [fromAddress],
         };
         try {
             loggerServer.trace('Querying database for allowances from address:', fromAddress);
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
             return result.rows;
         } catch (error) {
@@ -134,30 +123,30 @@ export class DataBase {
             throw error;
         }
     }
-    
 
-    async getAllAproval() {
+
+    async getAllAproval(): Promise<ResultBdd[]> {
         const query = {
             text: "SELECT * FROM contract_logs WHERE eventName='Approval'"
         };
         try {
             loggerServer.trace('get data');
-            const result = await this.pool.query(query);
+            const result: QueryResult = await this.pool.query(query);
             return result.rows;
         } catch (error) {
             loggerServer.error('Error inserting data:', error);
-            return error;
+            throw error;
         }
     }
 
 
 
-   
 
-    async insertData(blockNumber: number, eventName: string, fromAddress: string, toAddress: string, value: number) {
+
+    async insertData(parsedLog: ParsedLog): Promise<void> {
         const query = {
             text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
-            values: [blockNumber, eventName, fromAddress, toAddress, value],
+            values: [parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
         };
         try {
             loggerServer.trace('Data insert wating...');
@@ -165,17 +154,17 @@ export class DataBase {
             loggerServer.info('Data inserted successfully');
         } catch (error) {
             loggerServer.error('Error inserting data:', error);
-            return error;
+            throw error;
         }
     }
 
-    async startBdd() {
-        return this.pool.connect();
+    async startBdd(): Promise<void> {
+        try {
+            await this.pool.connect();
+            loggerServer.info("Postgres is connected")
+        } catch (error) {
+            throw error;
+        }
     }
 
-    addLogs() {
-        console.log("Add Logs DATABASE");
-        //this.insertData(0, "eventName", "fromAddress", "toAddress", 1)
-        this.getData()
-    }
 }

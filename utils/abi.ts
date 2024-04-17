@@ -1,4 +1,6 @@
-const abi = [
+import { Abi } from 'abitype';
+
+const abi: Abi = [
     {
       inputs: [],
       stateMutability: "nonpayable",

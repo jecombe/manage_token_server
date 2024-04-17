@@ -9,8 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.waiting = void 0;
+exports.existsBigIntInArray = exports.waiting = void 0;
 const waiting = (timer) => __awaiter(void 0, void 0, void 0, function* () {
     return new Promise((resolve) => setTimeout(resolve, timer));
 });
 exports.waiting = waiting;
+const existsBigIntInArray = (arr, value) => {
+    return arr.some((item) => item === value);
+};
+exports.existsBigIntInArray = existsBigIntInArray;
