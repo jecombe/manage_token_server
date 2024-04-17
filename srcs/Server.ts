@@ -173,7 +173,7 @@ export class Server extends DataBase {
             this.parseStartingDb(readAll)
             this.contract?.startListeningEvents();
         } catch (error) {
-            loggerServer.error(error)
+            loggerServer.error("start", error)
 
         }
     }
