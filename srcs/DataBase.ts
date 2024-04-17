@@ -2,13 +2,13 @@
 import dotenv from "dotenv";
 import { Pool, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
-import { ParsedLog, ResultBdd } from "../utils/interfaces.js";
+import { ParsedLog, Query, ResultBdd } from "../utils/interfaces.js";
 
 dotenv.config();
 
 export class DataBase {
 
-    public pool: Pool;
+    pool: Pool;
 
     constructor() {
         this.pool = new Pool({
@@ -34,7 +34,7 @@ export class DataBase {
     }
 
     async getAllDataFromAddr(fromAddress: string): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: "SELECT * FROM contract_logs WHERE fromAddress = $1",
             values: [fromAddress],
         };

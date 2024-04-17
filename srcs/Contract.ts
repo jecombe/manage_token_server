@@ -17,7 +17,7 @@ export class Contract extends Viem {
     manager: Manager;
     save: ParsedLog[];
     index: number;
-    public blockNumber: bigint
+    blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
     stopAt: bigint
@@ -46,23 +46,27 @@ export class Contract extends Viem {
 
             const parsedLog: ParsedLog = {
                 eventName: currentLog.eventName,
+                from: "",
+                to: "",
                 blockNumber: currentLog.blockNumber.toString(),
                 value: 0,
                 transactionHash: currentLog.transactionHash,
             };
 
 
-            if (currentLog.eventName === "Transfer") {
+            if (currentLog.eventName === "Transfer" && currentLog.args.from && currentLog.args.to) {
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
 
-            if (currentLog.eventName === "Approval") {
+            if (currentLog.eventName === "Approval" && currentLog.args.owner && currentLog.args.sender) {
                 parsedLog.from = currentLog.args.owner;
                 parsedLog.to = currentLog.args.sender;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
+            else loggerServer.info("Uknow envent come here: ", currentLog);
+
 
             accumulator.push(parsedLog);
             return accumulator;
@@ -74,7 +78,6 @@ export class Contract extends Viem {
             await Promise.all(parsed.map(async (el: ParsedLog) => {
                 await this.manager.insertData(el);
             }));
-
         } catch (error) {
             loggerServer.fatal("sendData: ", error);
             throw error;
@@ -92,27 +95,26 @@ export class Contract extends Viem {
         }, [])
     }
 
-    async getEventsLogsFrom(): Promise<void> {
+    getRangeBlock(batchSize: bigint): { fromBlock: bigint; toBlock: bigint } {
+        const fromBlock: bigint = this.blockNumber - batchSize * BigInt(this.index + 1);
+        const toBlock: bigint = this.blockNumber - batchSize * BigInt(this.index);
+        return { fromBlock, toBlock };
+    }
+
+    async getBatchLogs(fromBlock: bigint, toBlock: bigint): Promise<LogEntry[]> {
+        return this.cliPublic.getLogs({
+            address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+            events: parseAbi([
+                "event Approval(address indexed owner, address indexed sender, uint256 value)",
+                "event Transfer(address indexed from, address indexed to, uint256 value)",
+            ]),
+            fromBlock,
+            toBlock,
+        });
+    }
+
+    async sendLogsWithCheck(parsed: ParsedLog[]): Promise<void> {
         try {
-            const batchSize = BigInt(3000);
-            const saveLength = this.save.length;
-
-            const fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
-            const toBlock = this.blockNumber - batchSize * BigInt(this.index);
-
-            loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
-
-            const batchLogs: LogEntry[] = await this.cliPublic.getLogs({
-                address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
-                events: parseAbi([
-                    "event Approval(address indexed owner, address indexed sender, uint256 value)",
-                    "event Transfer(address indexed from, address indexed to, uint256 value)",
-                ]),
-                fromBlock,
-                toBlock,
-            });
-
-            const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
             if (!_.isEmpty(parsed)) {
                 const checkExisting: ParsedLog[] = this.isExist(parsed);
@@ -124,6 +126,27 @@ export class Contract extends Viem {
                 }
             }
 
+        } catch (error) {
+            loggerServer.fatal("sendLogsWithCheck", error);
+            throw error;
+        }
+    }
+
+    async getEventsLogsFrom(): Promise<void> {
+        try {
+            const batchSize: bigint = BigInt(3000);
+            const saveLength: number = this.save.length;
+
+            const { fromBlock, toBlock } = this.getRangeBlock(batchSize);
+
+            loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
+
+            const batchLogs = await this.getBatchLogs(fromBlock, toBlock);
+
+            const parsed: ParsedLog[] = this.parseResult(batchLogs);
+
+            await this.sendLogsWithCheck(parsed)
+
             this.index++;
 
             if (this.index > 0) await waiting(2000);
@@ -132,6 +155,7 @@ export class Contract extends Viem {
                 loggerServer.debug("Ending while", this.save.length, saveLength)
                 return;
             }
+
             return;
         } catch (error) {
             loggerServer.fatal("getEventsLogsFrom: ", error)
@@ -140,8 +164,8 @@ export class Contract extends Viem {
     }
 
     getRateLimits(): number {
-        const requestsPerMinute = 1800;
-        const millisecondsPerMinute = 60000;
+        const requestsPerMinute: number = 1800;
+        const millisecondsPerMinute: number = 60000;
         return millisecondsPerMinute / requestsPerMinute;
     };
 

@@ -12,12 +12,15 @@ export interface LogEntry {
     transactionHash: string;
 }
 
+export interface Query {
+    text: string;
+    values?: (string | number | bigint)[];
+}
+
 export interface ParsedLog {
     eventName: string;
-    from?: string;
-    to?: string;
-    owner?: string;
-    sender?: string;
+    from: string;
+    to: string;
     blockNumber: string;
     value: number;
     transactionHash: string;
