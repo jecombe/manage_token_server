@@ -1,15 +1,11 @@
 
 import dotenv from "dotenv";
 
-import { Pool, PoolClient, QueryResult } from 'pg';
+import { Pool, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
-import _ from "lodash"
 import { ParsedLog, ResultBdd } from "../utils/interfaces.js";
 
 dotenv.config();
-
-
-
 
 export class DataBase {
 

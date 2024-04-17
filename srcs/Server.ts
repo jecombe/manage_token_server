@@ -9,7 +9,6 @@ import cors from "cors";
 import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
 import abi from "../utils/abi.js";
-import _ from "lodash"
 import { Log } from "viem";
 
 dotenv.config();

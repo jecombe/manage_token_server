@@ -1,6 +1,6 @@
 
 import dotenv from "dotenv";
-import { GetLogsReturnType, Log, WatchContractEventReturnType, formatEther, parseAbi } from "viem";
+import { Log, WatchContractEventReturnType, formatEther, parseAbi } from "viem";
 import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
@@ -45,7 +45,7 @@ export class Contract extends Viem {
     parseResult(logs: LogEntry[]): ParsedLog[] {
         return logs.reduce((accumulator: ParsedLog[], currentLog: LogEntry) => {
 
-            let parsedLog: ParsedLog = {
+            const parsedLog: ParsedLog = {
                 eventName: currentLog.eventName,
                 blockNumber: currentLog.blockNumber.toString(),
                 value: 0,
@@ -139,8 +139,8 @@ export class Contract extends Viem {
             const batchSize = BigInt(3000);
             const saveLength = this.save.length;
 
-            let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
-            let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+            const fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
+            const toBlock = this.blockNumber - batchSize * BigInt(this.index);
 
             loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
 
