@@ -51,9 +51,8 @@ export class Contract extends Viem {
             value: 0,
             transactionHash: currentLog.transactionHash,
         };
-
     }
-
+    
     parseResult(logs: LogEntry[]): ParsedLog[] {
         return logs.reduce((accumulator: ParsedLog[], currentLog: LogEntry) => {
 
@@ -65,7 +64,7 @@ export class Contract extends Viem {
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
 
-            if (currentLog.eventName === "Approval" && currentLog.args.owner && currentLog.args.sender) {
+            else if (currentLog.eventName === "Approval" && currentLog.args.owner && currentLog.args.sender) {
                 parsedLog.from = currentLog.args.owner;
                 parsedLog.to = currentLog.args.sender;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
@@ -86,7 +85,6 @@ export class Contract extends Viem {
             loggerServer.fatal("sendData: ", error);
             throw error;
         }
-
     }
 
     isExist(array: ParsedLog[]): ParsedLog[] {
@@ -187,7 +185,7 @@ export class Contract extends Viem {
     };
 
     async waitingRate(batchStartTime: number, timePerRequest: number): Promise<void> {
-        const elapsedTime:number = Date.now() - batchStartTime;
+        const elapsedTime: number = Date.now() - batchStartTime;
         const waitTime: number = Math.max(0, timePerRequest - elapsedTime);
         return waiting(waitTime);
     };
