@@ -40,12 +40,12 @@ class DataBase {
                 text: 'DELETE FROM contract_logs',
             };
             try {
-                logger_js_1.loggerServer.trace('All data are delete waiting...');
+                logger_js_1.loggerServer.trace('deleteAllData');
                 yield this.pool.query(query);
-                logger_js_1.loggerServer.info('All data deleted successfully');
             }
             catch (error) {
                 logger_js_1.loggerServer.error('Error deleting data:', error);
+                throw error;
             }
         });
     }
@@ -56,13 +56,12 @@ class DataBase {
                 values: [fromAddress],
             };
             try {
-                logger_js_1.loggerServer.trace('Querying database for all data from address:', fromAddress);
+                logger_js_1.loggerServer.trace('getAllDataFromAddr:', fromAddress);
                 const result = yield this.pool.query(query);
-                logger_js_1.loggerServer.info(`All transfer all data from address ${fromAddress} retrieved successfully`);
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error querying data:', error);
+                logger_js_1.loggerServer.error('getAllDataFromAddr', error);
                 throw error;
             }
         });
@@ -73,13 +72,12 @@ class DataBase {
                 text: 'SELECT * FROM contract_logs',
             };
             try {
-                logger_js_1.loggerServer.trace('Fetching data...');
+                logger_js_1.loggerServer.trace('getData');
                 const result = yield this.pool.query(query);
-                logger_js_1.loggerServer.info('Data fetched successfully');
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error fetching data:', error);
+                logger_js_1.loggerServer.error('getData:', error);
                 throw error;
             }
         });
@@ -90,12 +88,12 @@ class DataBase {
                 text: "SELECT * FROM contract_logs WHERE eventName='Transfer'"
             };
             try {
-                logger_js_1.loggerServer.trace('get data');
+                logger_js_1.loggerServer.trace('getAllTx');
                 const result = yield this.pool.query(query);
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error inserting data:', error);
+                logger_js_1.loggerServer.error('getAllTx:', error);
                 throw error;
             }
         });
@@ -107,13 +105,12 @@ class DataBase {
                 values: [fromAddress],
             };
             try {
-                logger_js_1.loggerServer.trace('Querying database for transfers from address:', fromAddress);
+                logger_js_1.loggerServer.trace('getTransfersFromAddress:', fromAddress);
                 const result = yield this.pool.query(query);
-                logger_js_1.loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error querying data:', error);
+                logger_js_1.loggerServer.fatal('getTransfersFromAddress:', error);
                 throw error;
             }
         });
@@ -125,13 +122,12 @@ class DataBase {
                 values: [fromAddress],
             };
             try {
-                logger_js_1.loggerServer.trace('Querying database for allowances from address:', fromAddress);
+                logger_js_1.loggerServer.trace('getAllowanceFromAddress:', fromAddress);
                 const result = yield this.pool.query(query);
-                logger_js_1.loggerServer.info(`All transfer transactions from address ${fromAddress} retrieved successfully`);
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error querying data:', error);
+                logger_js_1.loggerServer.fatal('getAllowanceFromAddress:', error);
                 throw error;
             }
         });
@@ -142,12 +138,12 @@ class DataBase {
                 text: "SELECT * FROM contract_logs WHERE eventName='Approval'"
             };
             try {
-                logger_js_1.loggerServer.trace('get data');
+                logger_js_1.loggerServer.trace('getAllAproval');
                 const result = yield this.pool.query(query);
                 return result.rows;
             }
             catch (error) {
-                logger_js_1.loggerServer.error('Error inserting data:', error);
+                logger_js_1.loggerServer.error('getAllAproval:', error);
                 throw error;
             }
         });
@@ -176,6 +172,7 @@ class DataBase {
                 logger_js_1.loggerServer.info("Postgres is connected");
             }
             catch (error) {
+                logger_js_1.loggerServer.fatal("startBdd: ", error);
                 throw error;
             }
         });

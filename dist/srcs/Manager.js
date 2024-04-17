@@ -26,6 +26,17 @@ class Manager extends Server_1.Server {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 logger_1.loggerServer.info("============= Starting application manager token =============");
+                logger_1.loggerServer.trace(`
+
+            
+            ██████╗ ██╗   ██╗███████╗██████╗ 
+            ██╔══██╗██║   ██║██╔════╝██╔══██╗
+            ██████╔╝██║   ██║███████╗██║  ██║
+            ██╔══██╗██║   ██║╚════██║██║  ██║
+            ██████╔╝╚██████╔╝███████║██████╔╝
+            ╚═════╝  ╚═════╝ ╚══════╝╚═════╝ 
+                                             
+            `);
                 yield this.start();
             }
             catch (error) {

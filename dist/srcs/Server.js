@@ -156,7 +156,7 @@ class Server extends DataBase_js_1.DataBase {
                 (_a = this.contract) === null || _a === void 0 ? void 0 : _a.startListeningEvents();
             }
             catch (error) {
-                logger_js_1.loggerServer.error(error);
+                logger_js_1.loggerServer.error("start", error);
             }
         });
     }

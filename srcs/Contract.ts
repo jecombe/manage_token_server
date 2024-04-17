@@ -142,6 +142,8 @@ export class Contract extends Viem {
             let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
             let toBlock = this.blockNumber - batchSize * BigInt(this.index);
 
+            loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
+
             const batchLogs: LogEntry[] = await this.cliPublic.getLogs({
                 address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
                 events: parseAbi([
@@ -160,10 +162,8 @@ export class Contract extends Viem {
                     loggerServer.trace("Adding new thing: ", checkExisting);
                     await this.sendData(checkExisting);
                 } else {
-                    loggerServer.error("Log already existe", checkExisting)
+                    loggerServer.error("Log already existe", parsed)
                 }
-            } else {
-                loggerServer.debug("Log is empty", parsed)
             }
 
             this.index++;

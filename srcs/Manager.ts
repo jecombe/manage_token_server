@@ -15,6 +15,18 @@ export class Manager extends Server {
     async startServer(): Promise<void> {
         try {
             loggerServer.info("============= Starting application manager token =============");
+            loggerServer.trace(`
+
+            
+            ██████╗ ██╗   ██╗███████╗██████╗ 
+            ██╔══██╗██║   ██║██╔════╝██╔══██╗
+            ██████╔╝██║   ██║███████╗██║  ██║
+            ██╔══██╗██║   ██║╚════██║██║  ██║
+            ██████╔╝╚██████╔╝███████║██████╔╝
+            ╚═════╝  ╚═════╝ ╚══════╝╚═════╝ 
+                                             
+            `);
+
             await this.start();
         } catch (error) {
             loggerServer.fatal("StartServer: ", error);

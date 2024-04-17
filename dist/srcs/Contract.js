@@ -128,6 +128,7 @@ class Contract extends Viem_js_1.Viem {
                 const saveLength = this.save.length;
                 let fromBlock = this.blockNumber - batchSize * BigInt(this.index + 1);
                 let toBlock = this.blockNumber - batchSize * BigInt(this.index);
+                logger_js_1.loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
                 const batchLogs = yield this.cliPublic.getLogs({
                     address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
                     events: (0, viem_1.parseAbi)([
@@ -138,22 +139,27 @@ class Contract extends Viem_js_1.Viem {
                     toBlock,
                 });
                 const parsed = this.parseResult(batchLogs);
-                console.log(parsed);
                 if (!lodash_1.default.isEmpty(parsed)) {
                     const checkExisting = this.isExist(parsed);
-                    console.log("=====================================================00", checkExisting);
-                    if (!lodash_1.default.isEmpty(checkExisting))
+                    if (!lodash_1.default.isEmpty(checkExisting)) {
+                        logger_js_1.loggerServer.trace("Adding new thing: ", checkExisting);
                         yield this.sendData(checkExisting);
+                    }
+                    else {
+                        logger_js_1.loggerServer.error("Log already existe", parsed);
+                    }
                 }
                 this.index++;
                 if (this.index > 0)
                     yield (0, utils_js_1.waiting)(2000);
-                if (this.save.length > saveLength)
+                if (this.save.length > saveLength) {
+                    logger_js_1.loggerServer.debug("Ending while", this.save.length, saveLength);
                     return;
+                }
                 return;
             }
             catch (error) {
-                console.log(error);
+                logger_js_1.loggerServer.fatal("getEventsLogsFrom: ", error);
                 throw error;
             }
         });
@@ -252,7 +258,7 @@ class Contract extends Viem_js_1.Viem {
                 yield this.waitingRate(batchStartTime, this.timePerRequest);
             }
             catch (error) {
-                logger_js_1.loggerServer.error(error);
+                logger_js_1.loggerServer.error("processLogsBatch: ", error);
                 throw error;
             }
         });
@@ -273,7 +279,8 @@ class Contract extends Viem_js_1.Viem {
                 yield this.getLogsContract();
             }
             catch (error) {
-                console.log(error);
+                logger_js_1.loggerServer.fatal("startListeningEvents: ", error);
+                throw error;
             }
         });
     }
