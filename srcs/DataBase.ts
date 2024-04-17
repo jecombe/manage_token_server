@@ -49,7 +49,7 @@ export class DataBase {
     }
 
     async getData(): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: 'SELECT * FROM contract_logs',
         };
         try {
@@ -63,7 +63,7 @@ export class DataBase {
     }
 
     async getAllTx(): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: "SELECT * FROM contract_logs WHERE eventName='Transfer'"
         };
         try {
@@ -77,7 +77,7 @@ export class DataBase {
     }
 
     async getTransfersFromAddress(fromAddress: string): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: "SELECT * FROM contract_logs WHERE eventName = 'Transfer' AND fromAddress = $1",
             values: [fromAddress],
         };
@@ -92,7 +92,7 @@ export class DataBase {
     }
 
     async getAllowanceFromAddress(fromAddress: string): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: "SELECT * FROM contract_logs WHERE eventName = 'Allowance' AND fromAddress = $1",
             values: [fromAddress],
         };
@@ -108,7 +108,7 @@ export class DataBase {
 
 
     async getAllAproval(): Promise<ResultBdd[]> {
-        const query = {
+        const query: Query = {
             text: "SELECT * FROM contract_logs WHERE eventName='Approval'"
         };
         try {
@@ -121,12 +121,8 @@ export class DataBase {
         }
     }
 
-
-
-
-
     async insertData(parsedLog: ParsedLog): Promise<void> {
-        const query = {
+        const query: Query = {
             text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
             values: [parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
         };

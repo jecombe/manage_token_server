@@ -26,6 +26,7 @@ export interface ParsedLog {
     transactionHash: string;
 }
 
+
 export interface ResultBdd {
     blocknumber: string;
     eventname: string;

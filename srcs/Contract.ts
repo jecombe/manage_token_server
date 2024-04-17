@@ -37,22 +37,27 @@ export class Contract extends Viem {
     }
 
     parseNumberToEth(number: string) {
-        const numberBigInt = BigInt(number);
+        const numberBigInt: bigint = BigInt(number);
         return Number(formatEther(numberBigInt)).toFixed(2);
     };
+
+
+    initParsingLog(currentLog: LogEntry): ParsedLog {
+        return {
+            eventName: currentLog.eventName,
+            from: "",
+            to: "",
+            blockNumber: currentLog.blockNumber.toString(),
+            value: 0,
+            transactionHash: currentLog.transactionHash,
+        };
+
+    }
 
     parseResult(logs: LogEntry[]): ParsedLog[] {
         return logs.reduce((accumulator: ParsedLog[], currentLog: LogEntry) => {
 
-            const parsedLog: ParsedLog = {
-                eventName: currentLog.eventName,
-                from: "",
-                to: "",
-                blockNumber: currentLog.blockNumber.toString(),
-                value: 0,
-                transactionHash: currentLog.transactionHash,
-            };
-
+            const parsedLog: ParsedLog = this.initParsingLog(currentLog);
 
             if (currentLog.eventName === "Transfer" && currentLog.args.from && currentLog.args.to) {
                 parsedLog.from = currentLog.args.from;
@@ -66,7 +71,6 @@ export class Contract extends Viem {
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
             }
             else loggerServer.info("Uknow envent come here: ", currentLog);
-
 
             accumulator.push(parsedLog);
             return accumulator;
@@ -103,7 +107,7 @@ export class Contract extends Viem {
 
     async getBatchLogs(fromBlock: bigint, toBlock: bigint): Promise<LogEntry[]> {
         return this.cliPublic.getLogs({
-            address: `0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac`,
+            address: `0x${process.env.CONTRACT}`,
             events: parseAbi([
                 "event Approval(address indexed owner, address indexed sender, uint256 value)",
                 "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -141,7 +145,7 @@ export class Contract extends Viem {
 
             loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
 
-            const batchLogs = await this.getBatchLogs(fromBlock, toBlock);
+            const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
@@ -183,8 +187,8 @@ export class Contract extends Viem {
     };
 
     async waitingRate(batchStartTime: number, timePerRequest: number): Promise<void> {
-        const elapsedTime = Date.now() - batchStartTime;
-        const waitTime = Math.max(0, timePerRequest - elapsedTime);
+        const elapsedTime:number = Date.now() - batchStartTime;
+        const waitTime: number = Math.max(0, timePerRequest - elapsedTime);
         return waiting(waitTime);
     };
 
@@ -205,7 +209,7 @@ export class Contract extends Viem {
     startListener(callback: (logs: Log[]) => void): WatchContractEventReturnType {
         loggerServer.info("Listening Events smart contract...");
         return this.cliPublic.watchContractEvent({
-            address: "0x6A7577c10cD3F595eB2dbB71331D7Bf7223E1Aac",
+            address: `0x${process.env.CONTRACT}`,
             abi,
             onLogs: callback,
         });

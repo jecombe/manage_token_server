@@ -10,20 +10,12 @@ import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
 import abi from "../utils/abi.js";
 import { Log } from "viem";
+import { ResultBdd } from "../utils/interfaces.js";
 
 dotenv.config();
 
 const app = express();
-const port = 8000;
-
-
-interface ResultBdd {
-    blocknumber: string;
-    eventname: string;
-    fromaddress: string;
-    toaddress: string;
-    value: string;
-}
+const port = process.env.PORT_SERVER;
 
 export class Server extends DataBase {
 
