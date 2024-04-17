@@ -4,7 +4,6 @@ import { Server } from "./Server";
 
 dotenv.config();
 
-
 export class Manager extends Server {
 
     constructor() {

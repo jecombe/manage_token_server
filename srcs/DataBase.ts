@@ -1,6 +1,5 @@
 
 import dotenv from "dotenv";
-
 import { Pool, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
 import { ParsedLog, ResultBdd } from "../utils/interfaces.js";
@@ -19,15 +18,6 @@ export class DataBase {
             // port: process.env.PORT,
             database: process.env.DB
         });
-
-
-        /* this.client = new Client({
-             user: process.env.USR,
-             password: process.env.PASSWORD,
-             host: process.env.HOST,
-            // port: process.env.PORT,
-             database: process.env.DB
-         })*/
     }
 
     async deleteAllData(): Promise<void> {

@@ -64,8 +64,6 @@ export class Server extends DataBase {
         });
     }
 
-
-
     getAllData(): void {
         app.get("/api/get-all", async (req, res) => {
             try {
@@ -133,7 +131,6 @@ export class Server extends DataBase {
             }
         });
     }
-
 
     getApi() {
         this.deleteDatabase()
