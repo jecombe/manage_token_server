@@ -28,7 +28,7 @@ export class Server extends DataBase {
     }
 
     setManager(manager: Manager): void {
-        this.contract = new Contract(`${process.env.CONTRACT}`, abi, manager);
+        this.contract = new Contract(manager);
     }
 
     startApp(): void {
@@ -161,8 +161,8 @@ export class Server extends DataBase {
             this.parseStartingDb(readAll)
             this.contract?.startListeningEvents();
         } catch (error) {
-            loggerServer.error("start", error)
-
+            loggerServer.error("start", error);
+            throw error;
         }
     }
 }

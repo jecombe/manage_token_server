@@ -5,7 +5,7 @@ import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
-import { existsBigIntInArray, waiting } from "../utils/utils.js";
+import { existsBigIntInArray, parseTimestamp, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
 import { Abi } from 'abitype'
 import { LogEntry, ParsedLog } from "../utils/interfaces.js";
@@ -22,11 +22,13 @@ export class Contract extends Viem {
     isFetching: boolean;
     stopAt: bigint
     saveBlockNum: bigint[];
+    timeVolume: number;
 
 
-    constructor(address: string, abi: Abi, manager: Manager) {
-        super(address, abi);
+    constructor(manager: Manager) {
+        super();
         this.manager = manager;
+        this.timeVolume = 0;
         this.save = [];
         this.stopAt = BigInt(0);
         this.saveBlockNum = []
@@ -136,7 +138,17 @@ export class Contract extends Viem {
 
     async getEventsLogsFrom(): Promise<void> {
         try {
-            const batchSize: bigint = BigInt(3000);
+
+            console.log("before: ", parseTimestamp(this.timeVolume));
+            
+            this.timeVolume = subtractOneDay(this.timeVolume);
+            
+
+            console.log("after: ", parseTimestamp(this.timeVolume));
+
+            
+            const batchSize: bigint = BigInt(7200);
+
             const saveLength: number = this.save.length;
 
             const { fromBlock, toBlock } = this.getRangeBlock(batchSize);
@@ -144,6 +156,9 @@ export class Contract extends Viem {
             loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
+
+            //console.log(batchLogs);
+            
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
@@ -173,6 +188,7 @@ export class Contract extends Viem {
 
     async getLogsContract(): Promise<void> {
         try {
+            this.timeVolume = Date.now();
             this.blockNumber = BigInt(await this.getActualBlock());
 
             while (this.isFetching) {
