@@ -33,6 +33,7 @@ export interface ParsedVolume {
 
 
 export interface ResultBdd {
+    transactionhash: string;
     blocknumber: string;
     eventname: string;
     fromaddress: string;

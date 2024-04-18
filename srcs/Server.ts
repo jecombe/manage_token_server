@@ -139,13 +139,23 @@ export class Server extends DataBase {
 
 
 
-    parseStartingDb(array: ResultBdd[]): void {
+    /*parseStartingDb(array: ResultBdd[]): void {
         array.map((el: ResultBdd) => {
             if (el.blocknumber !== undefined && this.contract) {
                 this.contract.saveBlockNum.push(BigInt(el.blocknumber))
             }
         })
+    }*/
+
+    saveTx(array: ResultBdd[]): void {
+        array.map((el: ResultBdd) => {
+            if (el.blocknumber !== undefined && this.contract) {
+                this.contract.saveTx.push(el.transactionhash)
+            }
+        })
     }
+
+
 
     startFetchingLogs(): void {
         this.contract?.startListener((logs: Log[]) => {
@@ -158,8 +168,10 @@ export class Server extends DataBase {
             this.startApp();
             await this.startBdd();
             this.getApi();
-            const readAll: ResultBdd[] = await this.getData();
-            this.parseStartingDb(readAll)
+           const readAll: ResultBdd[] = await this.getData();
+            this.saveTx(readAll);
+            console.log(this.contract?.saveTx);
+            
             this.contract?.startListeningEvents();
         } catch (error) {
             loggerServer.error("start", error);

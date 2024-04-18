@@ -18,7 +18,7 @@ export class Contract extends Viem {
     blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
-    saveBlockNum: bigint[];
+    saveTx: string[];
     timeVolume: number;
 
 
@@ -26,7 +26,7 @@ export class Contract extends Viem {
         super();
         this.manager = manager;
         this.timeVolume = 0;
-        this.saveBlockNum = []
+        this.saveTx = []
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
@@ -37,7 +37,7 @@ export class Contract extends Viem {
         this.isFetching = false;
         this.index = 0;
         this.blockNumber = BigInt(0);
-        this.saveBlockNum = [];
+        this.saveTx = [];
         this.isFetching = true;
     }
 
@@ -67,12 +67,14 @@ export class Contract extends Viem {
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
+                parsedLog.transactionHash = currentLog.transactionHash;
             }
 
             else if (currentLog.eventName === "Approval" && currentLog.args.owner && currentLog.args.sender) {
                 parsedLog.from = currentLog.args.owner;
                 parsedLog.to = currentLog.args.sender;
                 parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
+                parsedLog.transactionHash = currentLog.transactionHash;
             }
             else loggerServer.info("Uknow envent come here: ", currentLog);
 
@@ -94,8 +96,8 @@ export class Contract extends Viem {
 
     isExist(array: ParsedLog[]): ParsedLog[] {
 
-        return array.reduce((acc: ParsedLog[], el: ParsedLog) => {
-            if (!existsBigIntInArray(this.saveBlockNum, BigInt(el.blockNumber))) {
+        return array.reduce((acc: ParsedLog[], el: ParsedLog) => {            
+            if (!_.includes(this.saveTx, el.transactionHash)) {
                 acc.push(el)
             }
             return acc;
@@ -176,7 +178,7 @@ export class Contract extends Viem {
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
 
-            //console.log(batchLogs);
+            console.log(batchLogs);
 
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);

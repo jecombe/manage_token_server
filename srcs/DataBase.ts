@@ -125,8 +125,8 @@ export class DataBase {
 
     async insertDataLogs(parsedLog: ParsedLog): Promise<void> {
         const query: Query = {
-            text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
-            values: [parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
+            text: 'INSERT INTO contract_logs (transactionHash, blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5, $6)',
+            values: [parsedLog.transactionHash, parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
         };
         try {
             loggerServer.trace('Data insert wating...');
