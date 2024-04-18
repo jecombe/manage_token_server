@@ -1,6 +1,6 @@
 
 import dotenv from "dotenv";
-import { Chain, PublicClient, createPublicClient, http } from "viem";
+import { Chain, PublicClient, createPublicClient, formatEther, http } from "viem";
 import { sepolia } from "viem/chains";
 
 dotenv.config();
@@ -10,6 +10,11 @@ export class Viem {
 
     constructor() {
         this.cliPublic = this.connectPublicClient();
+    }
+
+    formatToEth(number: bigint): string {
+        return formatEther(number)
+
     }
 
     connectPublicClient(): PublicClient {

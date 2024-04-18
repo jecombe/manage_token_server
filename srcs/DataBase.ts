@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 import { Pool, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
-import { ParsedLog, Query, ResultBdd } from "../utils/interfaces.js";
+import { ParsedLog, ParsedVolume, Query, ResultBdd } from "../utils/interfaces.js";
 
 dotenv.config();
 
@@ -25,7 +25,7 @@ export class DataBase {
             text: 'DELETE FROM contract_logs',
         };
         try {
-            loggerServer.trace('deleteAllData');
+            loggerServer.warn('deleteAllData');
             await this.pool.query(query);
         } catch (error) {
             loggerServer.error('Error deleting data:', error);
@@ -55,6 +55,8 @@ export class DataBase {
         try {
             loggerServer.trace('getData');
             const result: QueryResult = await this.pool.query(query);
+            console.log("=====================================0", result.rows);
+            
             return result.rows;
         } catch (error) {
             loggerServer.error('getData:', error);
@@ -121,7 +123,7 @@ export class DataBase {
         }
     }
 
-    async insertData(parsedLog: ParsedLog): Promise<void> {
+    async insertDataLogs(parsedLog: ParsedLog): Promise<void> {
         const query: Query = {
             text: 'INSERT INTO contract_logs (blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5)',
             values: [parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
@@ -132,6 +134,35 @@ export class DataBase {
             loggerServer.info('Data inserted successfully');
         } catch (error) {
             loggerServer.error('Error inserting data:', error);
+            throw error;
+        }
+    }
+
+    async insertDataVolumes(parsedLog: ParsedVolume): Promise<void> {
+        const query: Query = {
+            text: 'INSERT INTO contract_logs (timestam, value) VALUES ($1, $2)',
+            values: [parsedLog.timestamp, parsedLog.value],
+        };
+        try {
+            loggerServer.trace('Data insert wating...');
+            await this.pool.query(query);
+            loggerServer.info('Data inserted successfully');
+        } catch (error) {
+            loggerServer.error('Error inserting data:', error);
+            throw error;
+        }
+    }
+
+    async getAllVolumes(): Promise<ResultBdd[]> {
+        const query: Query = {
+            text: "SELECT * FROM contract_volumes"
+        };
+        try {
+            loggerServer.trace('getAllVolumes');
+            const result: QueryResult = await this.pool.query(query);
+            return result.rows;
+        } catch (error) {
+            loggerServer.error('getAllAproval:', error);
             throw error;
         }
     }

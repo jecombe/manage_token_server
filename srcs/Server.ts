@@ -49,6 +49,7 @@ export class Server extends DataBase {
             try {
                 loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
                 await this.deleteAllData();
+             this.contract?.resetFetching();
                 res.json("delete database ok");
             } catch (error) {
                 res.status(500).send("Error intern server delete");

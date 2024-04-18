@@ -26,6 +26,11 @@ export interface ParsedLog {
     transactionHash: string;
 }
 
+export interface ParsedVolume {
+    timestamp: number;
+    value: number
+}
+
 
 export interface ResultBdd {
     blocknumber: string;

@@ -7,7 +7,6 @@ import { Manager } from "./Manager.js";
 import _ from "lodash";
 import { existsBigIntInArray, parseTimestamp, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
-import { Abi } from 'abitype'
 import { LogEntry, ParsedLog } from "../utils/interfaces.js";
 
 dotenv.config();
@@ -15,12 +14,10 @@ dotenv.config();
 export class Contract extends Viem {
 
     manager: Manager;
-    save: ParsedLog[];
     index: number;
     blockNumber: bigint
     timePerRequest: number;
     isFetching: boolean;
-    stopAt: bigint
     saveBlockNum: bigint[];
     timeVolume: number;
 
@@ -29,8 +26,6 @@ export class Contract extends Viem {
         super();
         this.manager = manager;
         this.timeVolume = 0;
-        this.save = [];
-        this.stopAt = BigInt(0);
         this.saveBlockNum = []
         this.index = 0;
         this.isFetching = true;
@@ -38,9 +33,17 @@ export class Contract extends Viem {
         this.timePerRequest = this.getRateLimits();
     }
 
+    resetFetching() {
+        this.isFetching = false;
+        this.index = 0;
+        this.blockNumber = BigInt(0);
+        this.saveBlockNum = [];
+        this.isFetching = true;
+    }
+
     parseNumberToEth(number: string) {
         const numberBigInt: bigint = BigInt(number);
-        return Number(formatEther(numberBigInt)).toFixed(2);
+        return Number(formatEther(numberBigInt));
     };
 
 
@@ -54,7 +57,7 @@ export class Contract extends Viem {
             transactionHash: currentLog.transactionHash,
         };
     }
-    
+
     parseResult(logs: LogEntry[]): ParsedLog[] {
         return logs.reduce((accumulator: ParsedLog[], currentLog: LogEntry) => {
 
@@ -81,7 +84,7 @@ export class Contract extends Viem {
     async sendData(parsed: ParsedLog[]): Promise<void> {
         try {
             await Promise.all(parsed.map(async (el: ParsedLog) => {
-                await this.manager.insertData(el);
+                await this.manager.insertDataLogs(el);
             }));
         } catch (error) {
             loggerServer.fatal("sendData: ", error);
@@ -117,10 +120,30 @@ export class Contract extends Viem {
         });
     }
 
+
+    calculateVolume(logs: ParsedLog[]): string {
+        let volume: bigint = BigInt(0);
+        for (const log of logs) {
+            if (log.eventName === 'Transfer') {
+                volume += BigInt(log.value);
+            }
+        }
+        return `${volume}`
+    }
+
+    async analyseVolume(checkExisting: ParsedLog[]) {
+        console.log(checkExisting);
+        //  console.log(this.formatToEth(this.calculateVolume(checkExisting)));
+        //console.log(parseInt(this.formatToEth(this.calculateVolume(checkExisting)), 18));
+        console.log(Number(this.parseNumberToEth(this.calculateVolume(checkExisting))));
+
+    }
+
     async sendLogsWithCheck(parsed: ParsedLog[]): Promise<void> {
         try {
 
             if (!_.isEmpty(parsed)) {
+                this.analyseVolume(parsed)
                 const checkExisting: ParsedLog[] = this.isExist(parsed);
                 if (!_.isEmpty(checkExisting)) {
                     loggerServer.trace("Adding new thing: ", checkExisting);
@@ -140,16 +163,12 @@ export class Contract extends Viem {
         try {
 
             console.log("before: ", parseTimestamp(this.timeVolume));
-            
-            this.timeVolume = subtractOneDay(this.timeVolume);
-            
 
-            console.log("after: ", parseTimestamp(this.timeVolume));
+            if (!this.isFetching) return;
 
-            
             const batchSize: bigint = BigInt(7200);
 
-            const saveLength: number = this.save.length;
+            //    const saveLength: number = this.save.length;
 
             const { fromBlock, toBlock } = this.getRangeBlock(batchSize);
 
@@ -158,7 +177,7 @@ export class Contract extends Viem {
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
 
             //console.log(batchLogs);
-            
+
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
@@ -168,10 +187,15 @@ export class Contract extends Viem {
 
             if (this.index > 0) await waiting(2000);
 
-            if (this.save.length > saveLength) {
-                loggerServer.debug("Ending while", this.save.length, saveLength)
-                return;
-            }
+            /*  if (this.save.length > saveLength) {
+                  loggerServer.debug("Ending while", this.save.length, saveLength)
+                  return;
+              }*/
+
+            this.timeVolume = subtractOneDay(this.timeVolume);
+
+
+            console.log("after: ", parseTimestamp(this.timeVolume));
 
             return;
         } catch (error) {
@@ -191,7 +215,7 @@ export class Contract extends Viem {
             this.timeVolume = Date.now();
             this.blockNumber = BigInt(await this.getActualBlock());
 
-            while (this.isFetching) {
+            while (true) {
                 await this.processLogsBatch();
             }
         } catch (error) {
