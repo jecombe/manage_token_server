@@ -21,6 +21,7 @@ export class Contract extends Viem {
     saveTx: string[];
     timeVolume: Date | null;
     saveTime: Date[];
+    isContractPrev: bigint;
 
 
     constructor(manager: Manager) {
@@ -32,6 +33,7 @@ export class Contract extends Viem {
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
+        this.isContractPrev = BigInt(0);
         this.timePerRequest = this.getRateLimits();
     }
     async startAfterReset() {
@@ -212,32 +214,42 @@ export class Contract extends Viem {
         return BigInt(0)
     }
 
-    async getEventsLogsFrom(): Promise<boolean> {
+    async manageProcessRequest(): Promise<ParsedLog[]> {
+
         try {
-            let isContractPrev = BigInt(0);
-
-            if (!this.isFetching) return true;
-
-            this.loggingDate();
-
             const { fromBlock, toBlock } = this.getRangeBlock(BigInt(7200));
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
             const owner: LogOwner[] = await this.getLogsOwnerShip(fromBlock, toBlock);
 
-            if (!_.isEmpty(owner)) isContractPrev = this.contractIsPreviousOwner(owner[0]);
+            if (!_.isEmpty(owner)) this.isContractPrev = this.contractIsPreviousOwner(owner[0]);
 
-            const parsed: ParsedLog[] = this.parseResult(batchLogs);
+            return this.parseResult(batchLogs);
+
+        } catch (error) {
+            throw error;
+        }
+
+
+    }
+
+    async getEventsLogsFrom(): Promise<boolean> {
+        try {
+            this.isContractPrev = BigInt(0);
+
+            if (!this.isFetching) return true;
+
+            this.loggingDate();
+
+            const parsed = await this.manageProcessRequest();
 
             await this.sendLogsWithCheck(parsed)
 
             this.index++;
 
-            // if (this.index > 0) await waiting(2000);
-
             if (this.timeVolume) this.timeVolume = subtractOneDay(this.timeVolume);
 
-            if (isContractPrev !== BigInt(0)) return true;
+            if (this.isContractPrev !== BigInt(0)) return true;
 
             return false;
         } catch (error) {
@@ -273,8 +285,10 @@ export class Contract extends Viem {
             while (this.isFetching) {
                 const isStop = await this.processLogsBatch();
                 if (isStop) {
-                    loggerServer.warn("process fetching is stop -> smart contract is born");7
+                    loggerServer.warn("process fetching is stop -> smart contract is born");
                     this.index = 0;
+                    loggerServer.info("waiting for a new fetching...");
+                    await waiting(20000)
                     await this.newFetching();
                 }
             }
