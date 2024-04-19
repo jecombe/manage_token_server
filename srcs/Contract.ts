@@ -1,13 +1,13 @@
 
 import dotenv from "dotenv";
-import { Log, WatchContractEventReturnType, formatEther, parseAbi } from "viem";
+import { Log, WatchContractEventReturnType, formatEther, hexToBigInt, parseAbi } from "viem";
 import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
 import { removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
-import { LogEntry, ParsedLog } from "../utils/interfaces.js";
+import { LogEntry, LogOwner, ParsedLog } from "../utils/interfaces.js";
 
 dotenv.config();
 
@@ -141,12 +141,24 @@ export class Contract extends Viem {
             address: `0x${process.env.CONTRACT}`,
             events: parseAbi([
                 "event Approval(address indexed owner, address indexed sender, uint256 value)",
-                "event Transfer(address indexed from, address indexed to, uint256 value)",
+                "event Transfer(address indexed from, address indexed to, uint256 value)"
             ]),
             fromBlock,
             toBlock,
         });
     }
+
+    async getLogsOwnerShip(fromBlock: bigint, toBlock: bigint): Promise<LogOwner[]> {
+        return this.cliPublic.getLogs({
+            address: `0x${process.env.CONTRACT}`,
+            events: parseAbi([
+                "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+            ]),
+            fromBlock,
+            toBlock,
+        });
+    }
+
 
 
     calculateVolume(logs: ParsedLog[]): string {
@@ -191,16 +203,30 @@ export class Contract extends Viem {
         loggerServer.trace("Analyze Data for day: ", dateRemoveHours.toISOString().split('T')[0])
     }
 
-    async getEventsLogsFrom(): Promise<void> {
+    contractIsPreviousOwner(obj: any) {
+        if (obj.eventName !== "OwnershipTransferred") return;
+        
+        if (obj.args.previousOwner === "0x0000000000000000000000000000000000000000") {
+            return obj.blockNumber;
+        }
+        return BigInt(0)
+    }
+
+    async getEventsLogsFrom(): Promise<number> {
         try {
-            if (!this.isFetching) return;
+            let isPrev = BigInt(0);
+
+            if (!this.isFetching) return 0;
 
             this.loggingDate();
 
             const { fromBlock, toBlock } = this.getRangeBlock(BigInt(7200));
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
+            const owner: LogOwner[] = await this.getLogsOwnerShip(fromBlock, toBlock);
 
+            if (!_.isEmpty(owner)) isPrev = this.contractIsPreviousOwner(owner[0]);
+        
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
             await this.sendLogsWithCheck(parsed)
@@ -211,6 +237,9 @@ export class Contract extends Viem {
 
             if (this.timeVolume) this.timeVolume = subtractOneDay(this.timeVolume);
 
+            if (isPrev !== BigInt(0)) return 1;
+
+            return 0;
         } catch (error) {
             loggerServer.fatal("getEventsLogsFrom: ", error)
             throw error;
@@ -229,7 +258,11 @@ export class Contract extends Viem {
             this.blockNumber = BigInt(await this.getActualBlock());
 
             while (this.isFetching) {
-                await this.processLogsBatch();
+                const isStop = await this.processLogsBatch();
+                if (isStop) {
+                    loggerServer.warn("process fetching is stop -> smart contract is born");
+                    return;
+                }
             }
         } catch (error) {
             loggerServer.fatal("getLogsContract: ", error)
@@ -247,14 +280,12 @@ export class Contract extends Viem {
 
 
 
-    async processLogsBatch(): Promise<void> {
+    async processLogsBatch(): Promise<number> {
         const batchStartTime: number = Date.now();
         try {
-            await this.getEventsLogsFrom();
-            console.log(batchStartTime, this.timePerRequest);
-
-
+            const isStop = await this.getEventsLogsFrom();
             await this.waitingRate(batchStartTime, this.timePerRequest);
+            return isStop;
         } catch (error) {
             loggerServer.error("processLogsBatch: ", error);
             throw error;

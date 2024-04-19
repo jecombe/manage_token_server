@@ -12,6 +12,15 @@ export interface LogEntry {
     transactionHash: string;
 }
 
+
+export interface LogOwner {
+    args: {
+        previousOwner?: string
+    };
+    eventName: string;
+    blockNumber: bigint;
+}
+
 export interface Query {
     text: string;
     values?: (string | number | bigint | Date)[];
