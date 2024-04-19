@@ -20,7 +20,6 @@ export class Server extends DataBase {
 
   public contract: Contract | null;
 
-
   constructor() {
     super();
     this.contract = null;
@@ -59,13 +58,14 @@ export class Server extends DataBase {
     app.delete("/api/delete-database", async (req, res) => {
       try {
         loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
-        await this.deleteAllData();
-        await this.deleteAllVolumes();
         this.contract?.resetFetching();
 
-        //setTimeout(async () => {
+        await this.deleteAllData();
+        await this.deleteAllVolumes();
+
+        setTimeout(async () => {
         this.contract?.startAfterReset();
-        // }, 10000);
+         }, 10000);
           
         res.json("delete database ok");
       } catch (error) {
@@ -196,8 +196,8 @@ export class Server extends DataBase {
   async start(): Promise<void> {
     try {
       this.startApp();
-      await this.startBdd();
       this.getApi();
+      await this.startBdd();
       const readAll: ResultBdd[] = await this.getData();
       this.saveTx(readAll);
       const allVolumes: ResultVolume[] = await this.getAllVolumes();

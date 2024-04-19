@@ -139,6 +139,36 @@ export class DataBase {
     }
   }
 
+  async getVolumneByDate(parsedLog: ParsedLog): Promise<void> {
+    const query: Query = {
+      text: 'INSERT INTO contract_logs (transactionHash, blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5, $6)',
+      values: [parsedLog.transactionHash, parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
+    };
+    try {
+      loggerServer.trace('Data insert wating...');
+      await this.pool.query(query);
+      loggerServer.info('Data inserted successfully');
+    } catch (error) {
+      loggerServer.error('Error inserting data:', error);
+      throw error;
+    }
+  }
+
+  /*async updateVolumneByDate(parsedLog: ParsedLog): Promise<void> {
+    const query: Query = {
+      text: 'INSERT INTO contract_logs (transactionHash, blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5, $6)',
+      values: [parsedLog.transactionHash, parsedLog.blockNumber, parsedLog.eventName, parsedLog.from, parsedLog.to, parsedLog.value],
+    };
+    try {
+      loggerServer.trace('Data insert wating...');
+      await this.pool.query(query);
+      loggerServer.info('Data inserted successfully');
+    } catch (error) {
+      loggerServer.error('Error inserting data:', error);
+      throw error;
+    }
+  }*/
+
   async insertDataLogs(parsedLog: ParsedLog): Promise<void> {
     const query: Query = {
       text: 'INSERT INTO contract_logs (transactionHash, blockNumber, eventName, fromAddress, toAddress, value) VALUES ($1, $2, $3, $4, $5, $6)',

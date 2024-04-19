@@ -99,7 +99,11 @@ export class Contract extends Viem {
 
   async sendVolumeDaily(volume: number): Promise<void> {
     if (this.timeVolume && !_.includes(this.saveTime, this.timeVolume)) {
-      return this.manager.insertDataVolumes(this.timeVolume, volume);
+
+        return this.manager.insertDataVolumes(this.timeVolume, volume);
+    } else {
+        loggerServer.warn("is Exist")
+        //this.manager.getVolumeByDate();
     }
   }
 
@@ -107,7 +111,6 @@ export class Contract extends Viem {
     try {
 
       this.sendVolumeDaily(volume);
-
 
       for (const el of parsed) {
         if (!_.includes(this.saveTx, el.transactionHash)) {
@@ -266,13 +269,13 @@ export class Contract extends Viem {
 
   async newFetching(): Promise<void> {
     try {
-      this.timeVolume = new Date();
+      this.timeVolume = removeTimeFromDate(new Date());
       this.blockNumber = BigInt(await this.getActualBlock());
       loggerServer.info("new fetching with actual block: ", this.blockNumber.toString());
 
     } catch (error) {
       loggerServer.fatal("newFetching: ", error);
-      this.timeVolume = new Date();
+      this.timeVolume = removeTimeFromDate(new Date());
       this.blockNumber = BigInt(0);
       throw error;
     }
@@ -284,6 +287,7 @@ export class Contract extends Viem {
 
       while (this.isFetching) {
         const isStop = await this.processLogsBatch();
+        await waiting(2000)
         if (isStop) {
           loggerServer.warn("process fetching is stop -> smart contract is born");
           this.index = 0;
