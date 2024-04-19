@@ -7,7 +7,7 @@ import { Manager } from "./Manager.js";
 import _ from "lodash";
 import { removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
-import { LogEntry, LogOwner, ParsedLog } from "../utils/interfaces.js";
+import { LogEntry, LogOwner, ParsedLog, ResultVolume } from "../utils/interfaces.js";
 
 dotenv.config();
 
@@ -203,8 +203,8 @@ export class Contract extends Viem {
         loggerServer.trace("Analyze Data for day: ", dateRemoveHours.toISOString().split('T')[0])
     }
 
-    contractIsPreviousOwner(obj: any) {
-        if (obj.eventName !== "OwnershipTransferred") return;
+    contractIsPreviousOwner(obj: LogOwner): bigint {
+        if (obj.eventName !== "OwnershipTransferred") return BigInt(0);
 
         if (obj.args.previousOwner === "0x0000000000000000000000000000000000000000") {
             return obj.blockNumber;
