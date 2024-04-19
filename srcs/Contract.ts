@@ -212,11 +212,11 @@ export class Contract extends Viem {
         return BigInt(0)
     }
 
-    async getEventsLogsFrom(): Promise<number> {
+    async getEventsLogsFrom(): Promise<boolean> {
         try {
-            let isPrev = BigInt(0);
+            let isContractPrev = BigInt(0);
 
-            if (!this.isFetching) return 0;
+            if (!this.isFetching) return true;
 
             this.loggingDate();
 
@@ -225,7 +225,7 @@ export class Contract extends Viem {
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
             const owner: LogOwner[] = await this.getLogsOwnerShip(fromBlock, toBlock);
 
-            if (!_.isEmpty(owner)) isPrev = this.contractIsPreviousOwner(owner[0]);
+            if (!_.isEmpty(owner)) isContractPrev = this.contractIsPreviousOwner(owner[0]);
         
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
@@ -237,9 +237,9 @@ export class Contract extends Viem {
 
             if (this.timeVolume) this.timeVolume = subtractOneDay(this.timeVolume);
 
-            if (isPrev !== BigInt(0)) return 1;
+            if (isContractPrev !== BigInt(0)) return true;
 
-            return 0;
+            return false;
         } catch (error) {
             loggerServer.fatal("getEventsLogsFrom: ", error)
             throw error;
@@ -280,7 +280,7 @@ export class Contract extends Viem {
 
 
 
-    async processLogsBatch(): Promise<number> {
+    async processLogsBatch(): Promise<boolean> {
         const batchStartTime: number = Date.now();
         try {
             const isStop = await this.getEventsLogsFrom();
