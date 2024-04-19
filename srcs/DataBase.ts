@@ -111,7 +111,7 @@ export class DataBase {
 
   async getAllowanceFromAddress(fromAddress: string): Promise<ResultBdd[]> {
     const query: Query = {
-      text: "SELECT * FROM contract_logs WHERE eventName = 'Allowance' AND fromAddress = $1",
+      text: "SELECT * FROM contract_logs WHERE eventName = 'Approval' AND fromAddress = $1",
       values: [fromAddress],
     };
     try {
