@@ -35,6 +35,21 @@ export class DataBase {
         }
     }
 
+    async deleteAllVolumes(): Promise<void> {
+        const query = {
+            text: 'DELETE FROM contract_volumes',
+        };
+        try {
+            loggerServer.warn('deleteAllVolumes');
+            await this.pool.query(query);
+            loggerServer.info('deleteAllVolumes is ok' );
+
+        } catch (error) {
+            loggerServer.error('Error deleting data volumes:', error);
+            throw error;
+        }
+    }
+
     async getAllDataFromAddr(fromAddress: string): Promise<ResultBdd[]> {
         const query: Query = {
             text: "SELECT * FROM contract_logs WHERE fromAddress = $1",

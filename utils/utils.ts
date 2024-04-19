@@ -28,12 +28,11 @@ export const removeTimeFromDate = (currentDate: Date): Date => {
         currentDate.getFullYear(),
         currentDate.getMonth(),
         currentDate.getDate(),
-        0, // Heures
-        0, // Minutes
-        0, // Secondes
-        0  // Millisecondes
+        0,
+        0,
+        0,
+        0
     );
-    // Ajuster l'heure pour correspondre à l'heure locale
     localDate.setUTCHours(0);
     localDate.setUTCMinutes(0);
     localDate.setUTCSeconds(0);

@@ -44,11 +44,24 @@ export class Server extends DataBase {
         });
     }
 
+    getAllVolumesDaily(): void {
+        app.get("/api/get-all-volumes", async (req, res) => {
+            try {
+                loggerServer.trace(`get-all-volumes - Receive request from: ${req.ip}`)
+                res.json(await this.getAllVolumes());
+            } catch (error) {
+                loggerServer.fatal(`get-all-volumes: ${req.ip}`, error);
+                res.status(500).send("Error intern server get all volumes");
+            }
+        });
+    }
+
     deleteDatabase(): void {
         app.delete("/api/delete-database", async (req, res) => {
             try {
                 loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
                 await this.deleteAllData();
+                await this.deleteAllVolumes();
                 this.contract?.resetFetching();
 
                 //setTimeout(async () => {
@@ -57,6 +70,8 @@ export class Server extends DataBase {
           
                 res.json("delete database ok");
             } catch (error) {
+                loggerServer.fatal(`delete-database: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -68,6 +83,8 @@ export class Server extends DataBase {
                 loggerServer.trace(`get-all - Receive request from: ${req.ip}`)
                 res.json(await this.getData());
             } catch (error) {
+                loggerServer.fatal(`get-all: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -80,6 +97,8 @@ export class Server extends DataBase {
 
                 res.json(await this.getAllDataFromAddr(`${req.query.userAddress}`));
             } catch (error) {
+                loggerServer.fatal(`get-all-addr: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -91,6 +110,8 @@ export class Server extends DataBase {
                 loggerServer.trace(`get-all-transac - Receive request from: ${req.ip}`)
                 res.json(await this.getAllTx());
             } catch (error) {
+                loggerServer.fatal(`get-all-transac: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -102,6 +123,8 @@ export class Server extends DataBase {
                 loggerServer.trace(`get-all-transac-addr - Receive request from: ${req.ip}`)
                 res.json(await this.getTransfersFromAddress(`${req.query.userAddress}`));
             } catch (error) {
+                loggerServer.fatal(`get-all-transac-addr: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -114,6 +137,8 @@ export class Server extends DataBase {
                 loggerServer.trace(`get-all-allowances - Receive request from: ${req.ip}`)
                 res.json(await this.getAllAproval());
             } catch (error) {
+                loggerServer.fatal(`get-all-transac: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -125,6 +150,8 @@ export class Server extends DataBase {
                 loggerServer.trace(`get-all-allowances-addr - Receive request from`, req.ip)
                 res.json(await this.getAllowanceFromAddress(`${req.query.userAddress}`));
             } catch (error) {
+                loggerServer.fatal(`get-all-allowances-addr: ${req.ip}`, error);
+
                 res.status(500).send("Error intern server delete");
             }
         });
@@ -138,6 +165,7 @@ export class Server extends DataBase {
         this.getTransactionsFromAddr()
         this.getAllowances()
         this.getAllowancesFromAddr()
+        this.getAllVolumesDaily();
 
         loggerServer.info("Api is started")
     }
