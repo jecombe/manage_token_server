@@ -205,7 +205,7 @@ export class Contract extends Viem {
 
     contractIsPreviousOwner(obj: any) {
         if (obj.eventName !== "OwnershipTransferred") return;
-        
+
         if (obj.args.previousOwner === "0x0000000000000000000000000000000000000000") {
             return obj.blockNumber;
         }
@@ -226,7 +226,7 @@ export class Contract extends Viem {
             const owner: LogOwner[] = await this.getLogsOwnerShip(fromBlock, toBlock);
 
             if (!_.isEmpty(owner)) isContractPrev = this.contractIsPreviousOwner(owner[0]);
-        
+
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
             await this.sendLogsWithCheck(parsed)
@@ -252,16 +252,30 @@ export class Contract extends Viem {
         return millisecondsPerMinute / requestsPerMinute;
     };
 
-    async getLogsContract(): Promise<void> {
+    async newFetching(): Promise<void> {
         try {
             this.timeVolume = new Date();
             this.blockNumber = BigInt(await this.getActualBlock());
+            loggerServer.info("new fetching with actual block: ", this.blockNumber.toString());
+
+        } catch (error) {
+            loggerServer.fatal("newFetching: ", error)
+            this.timeVolume = new Date();
+            this.blockNumber = BigInt(0);
+            throw error;
+        }
+    }
+
+    async getLogsContract(): Promise<void> {
+        try {
+            await this.newFetching()
 
             while (this.isFetching) {
                 const isStop = await this.processLogsBatch();
                 if (isStop) {
-                    loggerServer.warn("process fetching is stop -> smart contract is born");
-                    return;
+                    loggerServer.warn("process fetching is stop -> smart contract is born");7
+                    this.index = 0;
+                    await this.newFetching();
                 }
             }
         } catch (error) {
@@ -274,7 +288,7 @@ export class Contract extends Viem {
     async waitingRate(batchStartTime: number, timePerRequest: number): Promise<void> {
         const elapsedTime: number = Date.now() - batchStartTime;
         const waitTime: number = Math.max(0, timePerRequest - elapsedTime);
-        console.log("Elapsed time:", elapsedTime, "Wait time:", waitTime);
+        loggerServer.debug("Elapsed time:", elapsedTime, "Wait time:", waitTime);
         return waiting(waitTime);
     };
 
