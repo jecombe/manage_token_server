@@ -6,15 +6,15 @@ dotenv.config();
 
 export class Manager extends Server {
 
-    constructor() {
-        super()
-        this.setManager(this);
-    }
+  constructor() {
+    super();
+    this.setManager(this);
+  }
 
-    async startServer(): Promise<void> {
-        try {
-            loggerServer.info("============= Starting application manager token =============");
-            loggerServer.trace(`
+  async startServer(): Promise<void> {
+    try {
+      loggerServer.info("============= Starting application manager token =============");
+      loggerServer.trace(`
 
             
             ██████╗ ██╗   ██╗███████╗██████╗ 
@@ -26,10 +26,10 @@ export class Manager extends Server {
                                              
             `);
 
-            await this.start();
-        } catch (error) {
-            loggerServer.fatal("StartServer: ", error);
-        }
+      await this.start();
+    } catch (error) {
+      loggerServer.fatal("StartServer: ", error);
     }
+  }
 
 }
