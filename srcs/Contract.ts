@@ -5,7 +5,7 @@ import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
-import { existsBigIntInArray, parseTimestamp, subtractOneDay, waiting } from "../utils/utils.js";
+import { existsBigIntInArray, parseTimestamp, removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
 import { LogEntry, ParsedLog } from "../utils/interfaces.js";
 
@@ -19,26 +19,38 @@ export class Contract extends Viem {
     timePerRequest: number;
     isFetching: boolean;
     saveTx: string[];
-    timeVolume: number;
+    timeVolume: Date | null;
+    saveTime: Date[];
 
 
     constructor(manager: Manager) {
         super();
         this.manager = manager;
-        this.timeVolume = 0;
-        this.saveTx = []
+        this.timeVolume = null;
+        this.saveTx = [];
+        this.saveTime = []
         this.index = 0;
         this.isFetching = true;
         this.blockNumber = BigInt(0);
         this.timePerRequest = this.getRateLimits();
     }
+    async startAfterReset() {
+        try {
+            this.isFetching = true;
+            await this.getLogsContract()
+        } catch (error) {
+            loggerServer.fatal("resetFetching: ", error)
+            this.isFetching = false;
+        }
+    }
 
-    resetFetching() {
+    async resetFetching() {
+
         this.isFetching = false;
         this.index = 0;
-        this.blockNumber = BigInt(0);
+        this.saveTime = [];
         this.saveTx = [];
-        this.isFetching = true;
+
     }
 
     parseNumberToEth(number: string) {
@@ -64,16 +76,18 @@ export class Contract extends Viem {
             const parsedLog: ParsedLog = this.initParsingLog(currentLog);
 
             if (currentLog.eventName === "Transfer" && currentLog.args.from && currentLog.args.to) {
+                console.log("PPPPPPPPPPPPPPPPPPPPPPPPPPPP> ",currentLog.args.value);
+                
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
-                parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
+                parsedLog.value = this.parseNumberToEth(`${currentLog.args.value}`);
                 parsedLog.transactionHash = currentLog.transactionHash;
             }
 
             else if (currentLog.eventName === "Approval" && currentLog.args.owner && currentLog.args.sender) {
                 parsedLog.from = currentLog.args.owner;
                 parsedLog.to = currentLog.args.sender;
-                parsedLog.value = Number(this.parseNumberToEth(`${currentLog.args.value}`));
+                parsedLog.value = this.parseNumberToEth(`${currentLog.args.value}`);
                 parsedLog.transactionHash = currentLog.transactionHash;
             }
             else loggerServer.info("Uknow envent come here: ", currentLog);
@@ -83,11 +97,18 @@ export class Contract extends Viem {
         }, []);
     }
 
-    async sendData(parsed: ParsedLog[]): Promise<void> {
+    async sendData(parsed: ParsedLog[], volume: number): Promise<void> {
         try {
-            await Promise.all(parsed.map(async (el: ParsedLog) => {
-                await this.manager.insertDataLogs(el);
-            }));
+
+            if (this.timeVolume && !_.includes(this.saveTime, this.timeVolume)) await this.manager.insertDataVolumes(this.timeVolume, volume)
+
+            for (const el of parsed) {
+                if (!_.includes(this.saveTx, el.transactionHash)) {
+                   //await this.manager.insertDataVolumes()
+                    await this.manager.insertDataLogs(el);
+                    this.saveTx.push(el.transactionHash);
+                }
+            }
         } catch (error) {
             loggerServer.fatal("sendData: ", error);
             throw error;
@@ -96,10 +117,11 @@ export class Contract extends Viem {
 
     isExist(array: ParsedLog[]): ParsedLog[] {
 
-        return array.reduce((acc: ParsedLog[], el: ParsedLog) => {            
+        return array.reduce((acc: ParsedLog[], el: ParsedLog) => {
             if (!_.includes(this.saveTx, el.transactionHash)) {
                 acc.push(el)
             }
+
             return acc;
         }, [])
     }
@@ -134,25 +156,42 @@ export class Contract extends Viem {
     }
 
     async analyseVolume(checkExisting: ParsedLog[]) {
-        console.log(checkExisting);
-        //  console.log(this.formatToEth(this.calculateVolume(checkExisting)));
+        //  console.log(checkExisting);
+       console.log(this.calculateVolume(checkExisting));
         //console.log(parseInt(this.formatToEth(this.calculateVolume(checkExisting)), 18));
-        console.log(Number(this.parseNumberToEth(this.calculateVolume(checkExisting))));
+        //   console.log(Number(this.parseNumberToEth(this.calculateVolume(checkExisting))));
 
+    }
+
+    savingTx(parsed: ParsedLog[]) {
+        parsed.map((el: ParsedLog) => {
+            _.union(this.saveTx, el.transactionHash)
+        })
     }
 
     async sendLogsWithCheck(parsed: ParsedLog[]): Promise<void> {
         try {
 
             if (!_.isEmpty(parsed)) {
-                this.analyseVolume(parsed)
+     
+
                 const checkExisting: ParsedLog[] = this.isExist(parsed);
                 if (!_.isEmpty(checkExisting)) {
-                    loggerServer.trace("Adding new thing: ", checkExisting);
-                    await this.sendData(checkExisting);
+
+                    loggerServer.trace("Adding new thing: ", checkExisting, parsed, this.saveTx);
+                
+                    
+                    const volumeDaily = this.calculateVolume(parsed);
+
+
+
+                    console.log("Volume daily: => ", Number(volumeDaily));
+
+                    await this.sendData(checkExisting, Number(volumeDaily));
                 } else {
                     loggerServer.error("Log already existe", parsed)
                 }
+
             }
 
         } catch (error) {
@@ -164,7 +203,9 @@ export class Contract extends Viem {
     async getEventsLogsFrom(): Promise<void> {
         try {
 
-            console.log("before: ", parseTimestamp(this.timeVolume));
+            
+
+            if (this.timeVolume) console.log("Date analyze: ", removeTimeFromDate(this?.timeVolume));
 
             if (!this.isFetching) return;
 
@@ -174,11 +215,9 @@ export class Contract extends Viem {
 
             const { fromBlock, toBlock } = this.getRangeBlock(batchSize);
 
-            loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
+            // loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
-
-            console.log(batchLogs);
 
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
@@ -194,10 +233,10 @@ export class Contract extends Viem {
                   return;
               }*/
 
-            this.timeVolume = subtractOneDay(this.timeVolume);
+            if (this.timeVolume) this.timeVolume = subtractOneDay(this.timeVolume);
 
 
-            console.log("after: ", parseTimestamp(this.timeVolume));
+            //  console.log("after: ", parseTimestamp(this.timeVolume));
 
             return;
         } catch (error) {
@@ -214,14 +253,15 @@ export class Contract extends Viem {
 
     async getLogsContract(): Promise<void> {
         try {
-            this.timeVolume = Date.now();
+            this.timeVolume = new Date();
             this.blockNumber = BigInt(await this.getActualBlock());
 
-            while (true) {
+            while (this.isFetching) {
                 await this.processLogsBatch();
             }
         } catch (error) {
             loggerServer.fatal("getLogsContract: ", error)
+            this.isFetching = false;
             throw error;
         }
     };

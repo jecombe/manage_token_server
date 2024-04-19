@@ -14,10 +14,34 @@ export const getAbiEvent = (): string[] =>  {
     ]
 }
 
-export const subtractOneDay = (currentTimestamp: number): number => {
+
+export const subtractOneDay = (currentDate: Date): Date => {
     const oneDayInMilliseconds = 24 * 60 * 60 * 1000;
-    return currentTimestamp - oneDayInMilliseconds;
+    const currentTimestamp = currentDate.getTime();
+    const newTimestamp = currentTimestamp - oneDayInMilliseconds;
+    return new Date(newTimestamp);
 }
+
+
+export const removeTimeFromDate = (currentDate: Date): Date => {
+    const localDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate(),
+        0, // Heures
+        0, // Minutes
+        0, // Secondes
+        0  // Millisecondes
+    );
+    // Ajuster l'heure pour correspondre à l'heure locale
+    localDate.setUTCHours(0);
+    localDate.setUTCMinutes(0);
+    localDate.setUTCSeconds(0);
+    localDate.setUTCMilliseconds(0);
+    return localDate;
+};
+
+
 
 export const parseTimestamp = (timestamp: number): string => {
     const date = new Date(timestamp);

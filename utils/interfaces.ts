@@ -14,8 +14,13 @@ export interface LogEntry {
 
 export interface Query {
     text: string;
-    values?: (string | number | bigint)[];
+    values?: (string | number | bigint | Date)[];
 }
+
+/*export interface QueryVolume {
+    text: string;
+    values?: (string | number | bigint)[];
+}*/
 
 export interface ParsedLog {
     eventName: string;
@@ -26,12 +31,6 @@ export interface ParsedLog {
     transactionHash: string;
 }
 
-export interface ParsedVolume {
-    timestamp: number;
-    value: number
-}
-
-
 export interface ResultBdd {
     transactionhash: string;
     blocknumber: string;
@@ -39,4 +38,10 @@ export interface ResultBdd {
     fromaddress: string;
     toaddress: string;
     value: string;
+}
+
+
+export interface ResultVolume {
+    timestamp: Date;
+    volume: string;
 }

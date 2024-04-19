@@ -2,7 +2,7 @@
 import dotenv from "dotenv";
 import { Pool, QueryResult } from 'pg';
 import { loggerServer } from "../utils/logger.js";
-import { ParsedLog, ParsedVolume, Query, ResultBdd } from "../utils/interfaces.js";
+import { ParsedLog, Query, ResultBdd, ResultVolume } from "../utils/interfaces.js";
 
 dotenv.config();
 
@@ -27,6 +27,8 @@ export class DataBase {
         try {
             loggerServer.warn('deleteAllData');
             await this.pool.query(query);
+            loggerServer.info('deleteAllData is ok' );
+
         } catch (error) {
             loggerServer.error('Error deleting data:', error);
             throw error;
@@ -55,7 +57,6 @@ export class DataBase {
         try {
             loggerServer.trace('getData');
             const result: QueryResult = await this.pool.query(query);
-            console.log("=====================================0", result.rows);
             
             return result.rows;
         } catch (error) {
@@ -138,22 +139,22 @@ export class DataBase {
         }
     }
 
-    async insertDataVolumes(parsedLog: ParsedVolume): Promise<void> {
+    async insertDataVolumes(timestamp: Date, volume: number): Promise<void> {
         const query: Query = {
-            text: 'INSERT INTO contract_logs (timestam, value) VALUES ($1, $2)',
-            values: [parsedLog.timestamp, parsedLog.value],
+            text: 'INSERT INTO contract_volumes (timestamp, volume) VALUES ($1, $2)',
+            values: [timestamp, volume],
         };
         try {
-            loggerServer.trace('Data insert wating...');
+            loggerServer.trace('Data volumes insert wating...');
             await this.pool.query(query);
-            loggerServer.info('Data inserted successfully');
+            loggerServer.info('Data volumes inserted successfully');
         } catch (error) {
-            loggerServer.error('Error inserting data:', error);
+            loggerServer.error('Error inserting data volumes:', error);
             throw error;
         }
     }
 
-    async getAllVolumes(): Promise<ResultBdd[]> {
+    async getAllVolumes(): Promise<ResultVolume[]> {
         const query: Query = {
             text: "SELECT * FROM contract_volumes"
         };

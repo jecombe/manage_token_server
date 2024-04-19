@@ -10,7 +10,7 @@ import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
 import abi from "../utils/abi.js";
 import { Log } from "viem";
-import { ResultBdd } from "../utils/interfaces.js";
+import { ResultBdd, ResultVolume } from "../utils/interfaces.js";
 
 dotenv.config();
 
@@ -49,7 +49,12 @@ export class Server extends DataBase {
             try {
                 loggerServer.trace(`delete-database - Receive request from: ${req.ip}`);
                 await this.deleteAllData();
-             this.contract?.resetFetching();
+                this.contract?.resetFetching();
+
+                //setTimeout(async () => {
+                    this.contract?.startAfterReset()
+                // }, 10000);
+          
                 res.json("delete database ok");
             } catch (error) {
                 res.status(500).send("Error intern server delete");
@@ -156,6 +161,15 @@ export class Server extends DataBase {
     }
 
 
+    saveTime(array: ResultVolume[]): void {
+        array.map((el: ResultVolume) => {
+            if (el.timestamp !== undefined && this.contract) {
+                this.contract.saveTime.push(el.timestamp)
+            }
+        })
+    }
+
+
 
     startFetchingLogs(): void {
         this.contract?.startListener((logs: Log[]) => {
@@ -170,7 +184,8 @@ export class Server extends DataBase {
             this.getApi();
            const readAll: ResultBdd[] = await this.getData();
             this.saveTx(readAll);
-            console.log(this.contract?.saveTx);
+            const allVolumes: ResultVolume[] = await this.getAllVolumes();
+            this.saveTime(allVolumes)
             
             this.contract?.startListeningEvents();
         } catch (error) {
