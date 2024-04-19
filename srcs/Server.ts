@@ -169,16 +169,6 @@ export class Server extends DataBase {
         loggerServer.info("Api is started")
     }
 
-
-
-    /*parseStartingDb(array: ResultBdd[]): void {
-        array.map((el: ResultBdd) => {
-            if (el.blocknumber !== undefined && this.contract) {
-                this.contract.saveBlockNum.push(BigInt(el.blocknumber))
-            }
-        })
-    }*/
-
     saveTx(array: ResultBdd[]): void {
         array.map((el: ResultBdd) => {
             if (el.blocknumber !== undefined && this.contract) {

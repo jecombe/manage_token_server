@@ -76,8 +76,6 @@ export class Contract extends Viem {
             const parsedLog: ParsedLog = this.initParsingLog(currentLog);
 
             if (currentLog.eventName === "Transfer" && currentLog.args.from && currentLog.args.to) {
-                console.log("PPPPPPPPPPPPPPPPPPPPPPPPPPPP> ",currentLog.args.value);
-                
                 parsedLog.from = currentLog.args.from;
                 parsedLog.to = currentLog.args.to;
                 parsedLog.value = this.parseNumberToEth(`${currentLog.args.value}`);
@@ -97,14 +95,20 @@ export class Contract extends Viem {
         }, []);
     }
 
+    async sendVolumeDaily(volume: number): Promise<void> {
+        if (this.timeVolume && !_.includes(this.saveTime, this.timeVolume)) {
+            return this.manager.insertDataVolumes(this.timeVolume, volume)
+        }
+    }
+
     async sendData(parsed: ParsedLog[], volume: number): Promise<void> {
         try {
 
-            if (this.timeVolume && !_.includes(this.saveTime, this.timeVolume)) await this.manager.insertDataVolumes(this.timeVolume, volume)
+            this.sendVolumeDaily(volume)
+
 
             for (const el of parsed) {
                 if (!_.includes(this.saveTx, el.transactionHash)) {
-                   //await this.manager.insertDataVolumes()
                     await this.manager.insertDataLogs(el);
                     this.saveTx.push(el.transactionHash);
                 }
@@ -155,13 +159,6 @@ export class Contract extends Viem {
         return `${volume}`
     }
 
-    async analyseVolume(checkExisting: ParsedLog[]) {
-        //  console.log(checkExisting);
-       console.log(this.calculateVolume(checkExisting));
-        //console.log(parseInt(this.formatToEth(this.calculateVolume(checkExisting)), 18));
-        //   console.log(Number(this.parseNumberToEth(this.calculateVolume(checkExisting))));
-
-    }
 
     savingTx(parsed: ParsedLog[]) {
         parsed.map((el: ParsedLog) => {
@@ -171,54 +168,38 @@ export class Contract extends Viem {
 
     async sendLogsWithCheck(parsed: ParsedLog[]): Promise<void> {
         try {
-
             if (!_.isEmpty(parsed)) {
-     
-
                 const checkExisting: ParsedLog[] = this.isExist(parsed);
                 if (!_.isEmpty(checkExisting)) {
 
                     loggerServer.trace("Adding new thing: ", checkExisting, parsed, this.saveTx);
-                
-                    
-                    const volumeDaily = this.calculateVolume(parsed);
 
-
-
-                    console.log("Volume daily: => ", Number(volumeDaily));
-
-                    await this.sendData(checkExisting, Number(volumeDaily));
+                    await this.sendData(checkExisting, Number(this.calculateVolume(parsed)));
                 } else {
                     loggerServer.error("Log already existe", parsed)
                 }
 
             }
-
         } catch (error) {
             loggerServer.fatal("sendLogsWithCheck", error);
             throw error;
         }
     }
 
+    loggingDate() {
+        const dateRemoveHours = removeTimeFromDate(this?.timeVolume || new Date());
+        loggerServer.trace("Analyze Data for day: ", dateRemoveHours.toISOString().split('T')[0])
+    }
+
     async getEventsLogsFrom(): Promise<void> {
         try {
-
-            
-
-            if (this.timeVolume) console.log("Date analyze: ", removeTimeFromDate(this?.timeVolume));
-
             if (!this.isFetching) return;
 
-            const batchSize: bigint = BigInt(7200);
+            this.loggingDate();
 
-            //    const saveLength: number = this.save.length;
-
-            const { fromBlock, toBlock } = this.getRangeBlock(batchSize);
-
-            // loggerServer.trace(`From block: ${fromBlock} - To block: ${toBlock} - Index: ${this.index}`);
+            const { fromBlock, toBlock } = this.getRangeBlock(BigInt(7200));
 
             const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
-
 
             const parsed: ParsedLog[] = this.parseResult(batchLogs);
 
@@ -226,19 +207,10 @@ export class Contract extends Viem {
 
             this.index++;
 
-            if (this.index > 0) await waiting(2000);
-
-            /*  if (this.save.length > saveLength) {
-                  loggerServer.debug("Ending while", this.save.length, saveLength)
-                  return;
-              }*/
+            // if (this.index > 0) await waiting(2000);
 
             if (this.timeVolume) this.timeVolume = subtractOneDay(this.timeVolume);
 
-
-            //  console.log("after: ", parseTimestamp(this.timeVolume));
-
-            return;
         } catch (error) {
             loggerServer.fatal("getEventsLogsFrom: ", error)
             throw error;
@@ -269,14 +241,19 @@ export class Contract extends Viem {
     async waitingRate(batchStartTime: number, timePerRequest: number): Promise<void> {
         const elapsedTime: number = Date.now() - batchStartTime;
         const waitTime: number = Math.max(0, timePerRequest - elapsedTime);
+        console.log("Elapsed time:", elapsedTime, "Wait time:", waitTime);
         return waiting(waitTime);
     };
+
 
 
     async processLogsBatch(): Promise<void> {
         const batchStartTime: number = Date.now();
         try {
             await this.getEventsLogsFrom();
+            console.log(batchStartTime, this.timePerRequest);
+
+
             await this.waitingRate(batchStartTime, this.timePerRequest);
         } catch (error) {
             loggerServer.error("processLogsBatch: ", error);
