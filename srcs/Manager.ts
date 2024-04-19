@@ -1,13 +1,16 @@
 import { loggerServer } from "../utils/logger";
 import dotenv from "dotenv";
 import { Server } from "./Server";
+import { Config } from "../utils/interfaces";
 
 dotenv.config();
 
 export class Manager extends Server {
-
-  constructor() {
+  config: Config;
+    
+  constructor(config: Config) {
     super();
+    this.config = config;
     this.setManager(this);
   }
 

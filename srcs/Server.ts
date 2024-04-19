@@ -64,8 +64,8 @@ export class Server extends DataBase {
         await this.deleteAllVolumes();
 
         setTimeout(async () => {
-        this.contract?.startAfterReset();
-         }, 10000);
+          this.contract?.startAfterReset();
+        }, 10000);
           
         res.json("delete database ok");
       } catch (error) {

@@ -5,7 +5,7 @@ import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
-import { removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
+import { calculateBlocksPerDay, removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
 import { LogEntry, LogOwner, ParsedLog } from "../utils/interfaces.js";
 
@@ -100,10 +100,10 @@ export class Contract extends Viem {
   async sendVolumeDaily(volume: number): Promise<void> {
     if (this.timeVolume && !_.includes(this.saveTime, this.timeVolume)) {
 
-        return this.manager.insertDataVolumes(this.timeVolume, volume);
+      return this.manager.insertDataVolumes(this.timeVolume, volume);
     } else {
-        loggerServer.warn("is Exist")
-        //this.manager.getVolumeByDate();
+      loggerServer.warn("is Exist");
+      //this.manager.getVolumeByDate();
     }
   }
 
@@ -219,7 +219,8 @@ export class Contract extends Viem {
   async manageProcessRequest(): Promise<ParsedLog[]> {
 
     try {
-      const { fromBlock, toBlock } = this.getRangeBlock(BigInt(7200));
+        
+      const { fromBlock, toBlock } = this.getRangeBlock(BigInt(calculateBlocksPerDay(this.manager.config.timeBlock)));
 
       const batchLogs: LogEntry[] = await this.getBatchLogs(fromBlock, toBlock);
       const owner: LogOwner[] = await this.getLogsOwnerShip(fromBlock, toBlock);
@@ -287,12 +288,12 @@ export class Contract extends Viem {
 
       while (this.isFetching) {
         const isStop = await this.processLogsBatch();
-        await waiting(2000)
+        await waiting(this.manager.config.waiting);
         if (isStop) {
           loggerServer.warn("process fetching is stop -> smart contract is born");
           this.index = 0;
           loggerServer.info("waiting for a new fetching...");
-          await waiting(20000);
+          await waiting(this.manager.config.waiting);
           await this.newFetching();
         }
       }

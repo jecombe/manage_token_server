@@ -7,6 +7,12 @@ export const existsBigIntInArray = (arr: bigint[], value: bigint): boolean => {
   return arr.some((item) => item === value);
 };
 
+export const calculateBlocksPerDay = (blockIntervalSeconds: number): number => {
+  const secondsInDay = 24 * 60 * 60;
+  const blocksPerDay = secondsInDay / blockIntervalSeconds;
+  return Math.round(blocksPerDay);
+};
+
 export const getAbiEvent = (): string[] => {
   return [
     "event Approval(address indexed owner, address indexed sender, uint256 value)",

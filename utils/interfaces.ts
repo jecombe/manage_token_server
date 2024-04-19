@@ -54,3 +54,9 @@ export interface ResultVolume {
     timestamp: Date;
     volume: string;
 }
+
+
+export interface Config {
+    waiting: number;
+    timeBlock: number;
+}

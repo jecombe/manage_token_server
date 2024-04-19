@@ -1,8 +1,14 @@
 import { Manager } from "./srcs/Manager.js";
+import { Config } from "./utils/interfaces.js";
 import { loggerServer } from "./utils/logger.js";
 
 (async () => {
-  const manager = new Manager();
+  const config: Config = {
+    waiting: 2000,
+    timeBlock: 14
+
+  };
+  const manager = new Manager(config);
   try {
     manager.startServer();
   } catch (error) {
