@@ -5,7 +5,7 @@ import { loggerServer } from "../utils/logger.js";
 import { Viem } from "./Viem.js";
 import { Manager } from "./Manager.js";
 import _ from "lodash";
-import { existsBigIntInArray, parseTimestamp, removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
+import { removeTimeFromDate, subtractOneDay, waiting } from "../utils/utils.js";
 import abi from "../utils/abi.js";
 import { LogEntry, ParsedLog } from "../utils/interfaces.js";
 

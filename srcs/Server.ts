@@ -8,7 +8,6 @@ import express from "express";
 import cors from "cors";
 import { Manager } from "./Manager.js";
 import { Contract } from "./Contract.js";
-import abi from "../utils/abi.js";
 import { Log } from "viem";
 import { ResultBdd, ResultVolume } from "../utils/interfaces.js";
 
