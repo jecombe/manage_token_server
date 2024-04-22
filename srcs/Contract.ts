@@ -239,7 +239,7 @@ export class Contract extends Viem {
 
   async getEventsLogsFrom(): Promise<boolean> {
     try {
-      this.isContractPrev = BigInt(0);
+      this.isContractPrev = BigInt(0);      
 
       if (!this.isFetching) return true;
 
@@ -271,6 +271,7 @@ export class Contract extends Viem {
   async newFetching(): Promise<void> {
     try {
       this.timeVolume = removeTimeFromDate(new Date());
+      
       this.blockNumber = BigInt(await this.getActualBlock());
       loggerServer.info("new fetching with actual block: ", this.blockNumber.toString());
 

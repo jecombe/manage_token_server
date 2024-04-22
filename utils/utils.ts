@@ -28,22 +28,20 @@ export const subtractOneDay = (currentDate: Date): Date => {
   return new Date(newTimestamp);
 };
 
-
 export const removeTimeFromDate = (currentDate: Date): Date => {
-  const localDate = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    currentDate.getDate(),
-    0,
-    0,
-    0,
-    0
-  );
-  localDate.setUTCHours(0);
-  localDate.setUTCMinutes(0);
-  localDate.setUTCSeconds(0);
-  localDate.setUTCMilliseconds(0);
-  return localDate;
+  console.log("======================> ", currentDate);
+  
+  // Obtenir l'année, le mois et le jour de la date actuelle en utilisant UTC
+  const year = currentDate.getUTCFullYear();
+  const month = currentDate.getUTCMonth();
+  const day = currentDate.getUTCDate();
+
+  // Créer une nouvelle instance de Date avec seulement la date (heure par défaut à minuit) en utilisant UTC
+  const dateOnly = new Date(Date.UTC(year, month, day));
+
+  console.log("After", dateOnly);
+  
+  return dateOnly;
 };
 
 
